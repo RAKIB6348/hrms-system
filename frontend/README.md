@@ -38,6 +38,10 @@ npm run dev        # http://localhost:5173
 
 Shared UI: collapsible responsive sidebar with expandable submenus, header with breadcrumbs, global search (`Ctrl/Cmd + K`), notifications, profile menu and theme toggle. Data tables support search, filters, sorting and pagination. Forms use Zod validation; destructive actions use confirmation dialogs; loading skeletons, empty states and toasts are used throughout.
 
+## Company settings
+
+The demo company defaults to **BDT (৳)** and **Asia/Dhaka (UTC+06:00)**. Both are selectable alongside the existing currency/timezone options, and `Save Changes` persists choices to `localStorage` through the same Zustand persistence mechanism used by the UI preferences, so they survive navigation. Existing saved preferences are preserved on load. `formatCurrency` renders BDT with the ৳ symbol via `Intl.NumberFormat`, and `formatDate` accepts an optional timezone.
+
 ## Architecture
 
 ```

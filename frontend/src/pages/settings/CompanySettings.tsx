@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { Building2, Save, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -10,23 +10,33 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  CURRENCY_OPTIONS, TIMEZONE_OPTIONS, useCompanyStore, type CompanySettings as CompanySettingsValues,
+} from '@/hooks/use-company-settings'
+import { formatCurrency, formatDate } from '@/lib/utils'
+
+const PREVIEW_DATE = new Date('2026-11-22T12:00:00Z')
 
 export default function CompanySettings() {
-  const [company, setCompany] = useState({
-    name: 'PeopleFlow Technologies', legalName: 'PeopleFlow Technologies Inc.',
-    email: 'hello@peopleflow.io', phone: '+1 (555) 100-2000',
-    website: 'https://peopleflow.io', address: '100 Market Street, New York, NY 10001',
-    timezone: 'America/New_York', currency: 'USD', fiscalYear: 'Calendar Year',
-  })
+  // Seed the draft from persisted preferences so saved choices survive navigation.
+  const storedSettings = useCompanyStore((state) => state.settings)
+  const save = useCompanyStore((state) => state.save)
+  const [company, setCompany] = useState<CompanySettingsValues>(storedSettings)
 
-  const update = (key: keyof typeof company, value: string) => setCompany((prev) => ({ ...prev, [key]: value }))
+  const update = (key: keyof CompanySettingsValues, value: string) => setCompany((prev) => ({ ...prev, [key]: value }))
+
+  const handleSave = (event: FormEvent) => {
+    event.preventDefault()
+    save({ ...company })
+    toast.success('Company settings saved (demo)')
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader title="Company Settings" description="Manage your organization's profile and policies." />
       <DemoNotice compact />
 
-      <form onSubmit={(e) => { e.preventDefault(); toast.success('Company settings saved (demo)') }} className="space-y-6">
+      <form onSubmit={handleSave} className="space-y-6">
         <Card>
           <CardHeader><CardTitle className="text-base">Company Profile</CardTitle><CardDescription>Basic information used across the platform.</CardDescription></CardHeader>
           <CardContent className="space-y-5">
@@ -40,17 +50,25 @@ export default function CompanySettings() {
               <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={company.email} onChange={(e) => update('email', e.target.value)} /></div>
               <div className="space-y-1.5"><Label>Phone</Label><Input value={company.phone} onChange={(e) => update('phone', e.target.value)} /></div>
               <div className="space-y-1.5"><Label>Website</Label><Input value={company.website} onChange={(e) => update('website', e.target.value)} /></div>
-              <div className="space-y-1.5"><Label>Timezone</Label>
+              <div className="space-y-1.5">
+                <Label>Timezone</Label>
                 <Select value={company.timezone} onValueChange={(v) => update('timezone', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{['America/New_York', 'Europe/London', 'Asia/Kolkata', 'Asia/Singapore'].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  <SelectContent>{TIMEZONE_OPTIONS.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Preview: {formatDate(PREVIEW_DATE, { dateStyle: 'medium', timeStyle: 'short' }, company.timezone)}
+                </p>
               </div>
-              <div className="space-y-1.5"><Label>Currency</Label>
+              <div className="space-y-1.5">
+                <Label>Currency</Label>
                 <Select value={company.currency} onValueChange={(v) => update('currency', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{['USD', 'EUR', 'GBP', 'INR', 'SGD'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent>{CURRENCY_OPTIONS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Preview: {formatCurrency(1000, company.currency)}
+                </p>
               </div>
               <div className="space-y-1.5"><Label>Fiscal Year</Label>
                 <Select value={company.fiscalYear} onValueChange={(v) => update('fiscalYear', v)}>
