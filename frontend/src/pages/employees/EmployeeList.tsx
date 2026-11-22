@@ -14,8 +14,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { EmployeeForm } from '@/features/employees/EmployeeForm'
-import { employees, departments } from '@/mocks/data'
+import { EmployeeForm, employeeFromFormValues } from '@/features/employees/EmployeeForm'
+import { useEmployeeStore } from '@/hooks/use-employee-store'
+import { departments } from '@/mocks/data'
 import { formatCurrency, initials } from '@/lib/utils'
 import type { Employee } from '@/types'
 
@@ -29,7 +30,9 @@ const VIEW_STORAGE_KEY = 'hrms-employee-view'
 
 export default function EmployeeList() {
   const navigate = useNavigate()
-  const [rows, setRows] = useState(employees)
+  const rows = useEmployeeStore((state) => state.employees)
+  const updateEmployee = useEmployeeStore((state) => state.updateEmployee)
+  const deleteEmployee = useEmployeeStore((state) => state.deleteEmployee)
   const [deleting, setDeleting] = useState<Employee | null>(null)
   const [editing, setEditing] = useState<Employee | null>(null)
   const [query, setQuery] = useState('')
@@ -189,7 +192,7 @@ export default function EmployeeList() {
         title="Delete employee?"
         description={`Remove ${deleting?.firstName} ${deleting?.lastName} from the demo employee list?`}
         confirmLabel="Delete employee"
-        onConfirm={() => { if (deleting) setRows((prev) => prev.filter((e) => e.id !== deleting.id)); toast.success('Employee removed from demo list') }}
+        onConfirm={() => { if (deleting) deleteEmployee(deleting.id); toast.success('Employee removed from demo list') }}
       />
 
       <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
@@ -202,33 +205,70 @@ export default function EmployeeList() {
           </DialogHeader>
           {editing && (
             <EmployeeForm
+              employeeId={editing.employeeId}
               submitLabel="Save Changes"
               excludeEmployeeId={editing.id}
               defaultValues={{
+                photo: null,
                 firstName: editing.firstName,
+                middleName: editing.middleName ?? '',
                 lastName: editing.lastName,
-                email: editing.email,
-                phone: editing.phone,
+                dob: editing.dob,
+                gender: editing.gender ?? '',
+                maritalStatus: editing.maritalStatus ?? '',
+                bloodGroup: editing.bloodGroup ?? '',
+                nationality: editing.nationality ?? '',
+                fatherName: editing.fatherName ?? '',
+                motherName: editing.motherName ?? '',
+                personalEmail: editing.personalEmail ?? '',
+                workEmail: editing.email,
+                primaryMobile: editing.phone,
+                alternativeMobile: editing.alternativeMobile ?? '',
+                presentAddress: editing.presentAddress ?? editing.address ?? '',
+                permanentAddress: editing.permanentAddress ?? '',
+                sameAsPresent: false,
+                city: editing.city ?? '',
+                district: editing.district ?? '',
+                postalCode: editing.postalCode ?? '',
+                country: editing.country ?? '',
+                nidNumber: editing.nidNumber ?? '',
+                birthRegistrationNumber: editing.birthRegistrationNumber ?? '',
+                passportNumber: editing.passportNumber ?? '',
+                passportExpiryDate: editing.passportExpiryDate ?? '',
+                tin: editing.tin ?? '',
+                employeeId: editing.employeeId,
+                joinDate: editing.joinDate,
                 department: editing.department,
                 designation: editing.designation,
                 employmentType: editing.employmentType,
-                joinDate: editing.joinDate,
-                location: editing.location,
-                salary: String(editing.salary),
-                manager: editing.manager,
                 managerId: editing.managerId ?? '',
-                address: editing.address,
+                manager: editing.manager,
+                employmentStatus: editing.employeeStatus ?? editing.status,
+                workLocation: editing.location,
+                workMode: editing.workMode ?? 'On-site',
+                probationStart: editing.probationStart ?? '',
+                probationEnd: editing.probationEnd ?? '',
+                confirmationDate: editing.confirmationDate ?? '',
+                contractStart: editing.contractStart ?? '',
+                contractEnd: editing.contractEnd ?? '',
+                shift: editing.shift ?? '',
+                weeklyWorkingDays: editing.weeklyWorkingDays ?? '',
+                standardHours: editing.standardHours ?? '',
+                attendancePolicy: editing.attendancePolicy ?? '',
+                salaryType: editing.salaryType ?? 'Monthly',
+                basicSalary: String(editing.grossSalary ?? Math.round(editing.salary / 12)),
+                hra: String(editing.hra ?? 0),
+                medicalAllowance: String(editing.medicalAllowance ?? 0),
+                transportAllowance: String(editing.transportAllowance ?? 0),
+                otherAllowances: String(editing.otherAllowances ?? 0),
+                paymentMethod: editing.paymentMethod ?? 'Bank Transfer',
+                education: editing.education ?? [],
+                experience: editing.experience ?? [],
+                emergencyContacts: editing.emergencyContacts ?? [],
               }}
               onCancel={() => setEditing(null)}
               onSubmit={(values) => {
-                setRows((prev) => prev.map((row) => row.id === editing.id ? {
-                  ...row,
-                  ...values,
-                  employmentType: values.employmentType as Employee['employmentType'],
-                  salary: Number(values.salary),
-                  manager: values.manager ?? '',
-                  address: values.address ?? '',
-                } : row))
+                updateEmployee(editing.id, employeeFromFormValues(values, editing.employeeId, editing))
                 toast.success(`${values.firstName} ${values.lastName} updated in the demo list`)
                 setEditing(null)
               }}

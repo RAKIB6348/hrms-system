@@ -14,13 +14,14 @@ import { DemoNotice } from '@/components/common/DemoNotice'
 import { StatCard } from '@/components/common/StatCard'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { EmptyState } from '@/components/common/EmptyState'
-import { employees, attendanceRecords } from '@/mocks/data'
+import { attendanceRecords } from '@/mocks/data'
+import { useEmployeeStore } from '@/hooks/use-employee-store'
 import { formatCurrency, formatDate, initials } from '@/lib/utils'
 
 export default function EmployeeProfile() {
   const { id } = useParams()
   const [tab, setTab] = useState('overview')
-  const employee = employees.find((e) => e.id === id)
+  const employee = useEmployeeStore((state) => state.employees.find((e) => e.id === id))
 
   if (!employee) {
     return <EmptyState icon={UserRound} title="Employee not found" description="This employee record does not exist in the demo data." actionLabel="Back to employees" onAction={() => window.history.back()} />
@@ -70,6 +71,7 @@ export default function EmployeeProfile() {
         <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="personal">Personal Details</TabsTrigger>
+          <TabsTrigger value="registration">Registration Details</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
         </TabsList>
@@ -107,6 +109,103 @@ export default function EmployeeProfile() {
               <InfoRow icon={Mail} label="Email" value={employee.email} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="registration" className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Identity & Family</CardTitle></CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2 text-sm">
+                <InfoRow icon={UserRound} label="Middle Name" value={employee.middleName ?? '—'} />
+                <InfoRow icon={UserRound} label="Marital Status" value={employee.maritalStatus ?? '—'} />
+                <InfoRow icon={UserRound} label="Blood Group" value={employee.bloodGroup ?? '—'} />
+                <InfoRow icon={UserRound} label="Nationality" value={employee.nationality ?? '—'} />
+                <InfoRow icon={UserRound} label="Father's Name" value={employee.fatherName ?? '—'} />
+                <InfoRow icon={UserRound} label="Mother's Name" value={employee.motherName ?? '—'} />
+                <InfoRow icon={FileText} label="NID Number" value={employee.nidNumber ?? '—'} />
+                <InfoRow icon={FileText} label="Birth Registration" value={employee.birthRegistrationNumber ?? '—'} />
+                <InfoRow icon={FileText} label="Passport Number" value={employee.passportNumber ?? '—'} />
+                <InfoRow icon={CalendarDays} label="Passport Expiry" value={employee.passportExpiryDate ? formatDate(employee.passportExpiryDate) : '—'} />
+                <InfoRow icon={FileText} label="TIN" value={employee.tin ?? '—'} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Contact & Address</CardTitle></CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2 text-sm">
+                <InfoRow icon={Mail} label="Personal Email" value={employee.personalEmail ?? '—'} />
+                <InfoRow icon={Phone} label="Alternative Mobile" value={employee.alternativeMobile ?? '—'} />
+                <InfoRow icon={MapPin} label="Present Address" value={employee.presentAddress ?? employee.address} />
+                <InfoRow icon={MapPin} label="Permanent Address" value={employee.permanentAddress ?? '—'} />
+                <InfoRow icon={MapPin} label="City" value={employee.city ?? '—'} />
+                <InfoRow icon={MapPin} label="District" value={employee.district ?? '—'} />
+                <InfoRow icon={MapPin} label="Postal Code" value={employee.postalCode ?? '—'} />
+                <InfoRow icon={MapPin} label="Country" value={employee.country ?? '—'} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Employment & Schedule</CardTitle></CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2 text-sm">
+                <InfoRow icon={BriefcaseBusiness} label="Employment Status" value={employee.employeeStatus ?? employee.status} />
+                <InfoRow icon={BriefcaseBusiness} label="Work Mode" value={employee.workMode ?? '—'} />
+                <InfoRow icon={BriefcaseBusiness} label="Shift" value={employee.shift ?? '—'} />
+                <InfoRow icon={BriefcaseBusiness} label="Working Days" value={employee.weeklyWorkingDays ?? '—'} />
+                <InfoRow icon={CalendarDays} label="Probation" value={employee.probationStart ? `${formatDate(employee.probationStart)} – ${employee.probationEnd ? formatDate(employee.probationEnd) : '—'}` : '—'} />
+                <InfoRow icon={CalendarDays} label="Confirmation" value={employee.confirmationDate ? formatDate(employee.confirmationDate) : '—'} />
+                <InfoRow icon={CalendarDays} label="Contract" value={employee.contractStart ? `${formatDate(employee.contractStart)} – ${employee.contractEnd ? formatDate(employee.contractEnd) : '—'}` : '—'} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Compensation</CardTitle></CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2 text-sm">
+                <InfoRow icon={Wallet} label="Salary Type" value={employee.salaryType ?? '—'} />
+                <InfoRow icon={Wallet} label="Monthly Gross" value={employee.grossSalary ? formatCurrency(employee.grossSalary) : '—'} />
+                <InfoRow icon={Wallet} label="House Rent Allowance" value={employee.hra ? formatCurrency(employee.hra) : '—'} />
+                <InfoRow icon={Wallet} label="Medical Allowance" value={employee.medicalAllowance ? formatCurrency(employee.medicalAllowance) : '—'} />
+                <InfoRow icon={Wallet} label="Transport Allowance" value={employee.transportAllowance ? formatCurrency(employee.transportAllowance) : '—'} />
+                <InfoRow icon={Wallet} label="Other Allowances" value={employee.otherAllowances ? formatCurrency(employee.otherAllowances) : '—'} />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Education</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {employee.education?.length ? employee.education.map((item, index) => (
+                  <div key={index} className="rounded-lg border p-3">
+                    <p className="font-medium">{item.degree || 'Degree'}</p>
+                    <p className="text-xs text-muted-foreground">{item.institution} · {item.subject} · {item.passingYear} · {item.result}</p>
+                  </div>
+                )) : <p className="text-muted-foreground">No education records.</p>}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Previous Employment</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {employee.experience?.length ? employee.experience.map((item, index) => (
+                  <div key={index} className="rounded-lg border p-3">
+                    <p className="font-medium">{item.jobTitle || 'Role'} · {item.company}</p>
+                    <p className="text-xs text-muted-foreground">{item.startDate} – {item.endDate}</p>
+                  </div>
+                )) : <p className="text-muted-foreground">No previous employment records.</p>}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Emergency Contacts</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {employee.emergencyContacts?.length ? employee.emergencyContacts.map((item, index) => (
+                  <div key={index} className="rounded-lg border p-3">
+                    <p className="font-medium">{item.name} · {item.relationship}</p>
+                    <p className="text-xs text-muted-foreground">{item.phone} · {item.alternativePhone}</p>
+                  </div>
+                )) : <p className="text-muted-foreground">No emergency contacts.</p>}
+              </CardContent>
+            </Card>
+          </div>
+          <p className="text-xs text-muted-foreground">Identity and banking details are session-only in this demo and are not persisted.</p>
         </TabsContent>
 
         <TabsContent value="documents">

@@ -8,6 +8,30 @@ export type ApplicationStage = 'Applied' | 'Screening' | 'Interview' | 'Offer' |
 export type PayrollStatus = 'Draft' | 'Processing' | 'Completed' | 'Paid'
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical'
 
+export interface EducationRecord {
+  degree: string
+  institution: string
+  subject: string
+  passingYear: string
+  result: string
+}
+
+export interface ExperienceRecord {
+  company: string
+  jobTitle: string
+  startDate: string
+  endDate: string
+  responsibilities: string
+}
+
+export interface EmergencyContact {
+  name: string
+  relationship: string
+  phone: string
+  alternativePhone: string
+  address: string
+}
+
 export interface Employee {
   id: ID
   employeeId: string
@@ -29,6 +53,49 @@ export interface Employee {
   gender: 'Male' | 'Female' | 'Other'
   address: string
   employmentType: 'Full-time' | 'Part-time' | 'Contract' | 'Intern'
+
+  /* Extended registration details — optional so existing demo records stay valid. */
+  middleName?: string
+  maritalStatus?: string
+  bloodGroup?: string
+  nationality?: string
+  fatherName?: string
+  motherName?: string
+  personalEmail?: string
+  alternativeMobile?: string
+  presentAddress?: string
+  permanentAddress?: string
+  city?: string
+  district?: string
+  postalCode?: string
+  country?: string
+  nidNumber?: string
+  birthRegistrationNumber?: string
+  passportNumber?: string
+  passportExpiryDate?: string
+  tin?: string
+  employeeStatus?: EmployeeStatus
+  workMode?: string
+  probationStart?: string
+  probationEnd?: string
+  confirmationDate?: string
+  contractStart?: string
+  contractEnd?: string
+  shift?: string
+  weeklyWorkingDays?: string
+  standardHours?: string
+  attendancePolicy?: string
+  salaryType?: string
+  hra?: number
+  medicalAllowance?: number
+  transportAllowance?: number
+  otherAllowances?: number
+  grossSalary?: number
+  paymentMethod?: string
+  photoUrl?: string
+  education?: EducationRecord[]
+  experience?: ExperienceRecord[]
+  emergencyContacts?: EmergencyContact[]
 }
 
 export interface Department {
