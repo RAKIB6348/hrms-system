@@ -13,10 +13,11 @@ interface ManagerSelectProps {
   displayName?: string
   onChange: (employee: Employee | null) => void
   excludeEmployeeId?: string
+  className?: string
 }
 
 /** Searchable reporting-manager picker backed by the existing employee data. */
-export function ManagerSelect({ value, displayName, onChange, excludeEmployeeId }: ManagerSelectProps) {
+export function ManagerSelect({ value, displayName, onChange, excludeEmployeeId, className }: ManagerSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -51,10 +52,14 @@ export function ManagerSelect({ value, displayName, onChange, excludeEmployeeId 
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn('w-full justify-between font-normal', !selected && !displayName && 'text-muted-foreground')}
+          className={cn(
+            'h-[42px] w-full justify-between rounded-lg border-slate-200 bg-white px-3.5 text-left text-sm font-normal transition-colors hover:border-slate-300 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700',
+            !selected && !displayName && 'text-muted-foreground',
+            className,
+          )}
         >
           <span className="truncate">{label}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[340px] max-w-[90vw] p-2">
