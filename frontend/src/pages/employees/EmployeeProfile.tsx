@@ -423,7 +423,7 @@ export default function EmployeeProfile() {
   const activePhoto = previewPhoto || employee.photoUrl
 
   return (
-    <div className="space-y-3.5 max-w-7xl mx-auto pb-6">
+    <div className="w-full max-w-none space-y-4 pb-6">
       {/* Top Breadcrumb Navigation */}
       <div className="flex items-center justify-between">
         <Button
