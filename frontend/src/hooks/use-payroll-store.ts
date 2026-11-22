@@ -19,6 +19,7 @@ interface PayrollStoreState {
   batches: PayrollBatch[]
   generatePayslips: (input: GeneratePayslipsInput) => GeneratePayslipsResult
   markBatchPaid: (batchId: string) => void
+  markRecordPaid: (recordId: string) => void
 }
 
 /** Short period label used to link generated payslips to their batch. */
@@ -94,9 +95,25 @@ export const usePayrollStore = create<PayrollStoreState>()(
       },
 
       markBatchPaid: (batchId) => {
+        const targetBatch = get().batches.find((b) => b.id === batchId)
         set((state) => ({
           batches: state.batches.map((batch) =>
             batch.id === batchId ? { ...batch, status: 'Paid' as const } : batch,
+          ),
+          records: targetBatch
+            ? state.records.map((r) =>
+                r.month.includes(targetBatch.period.split(' ')[0]!) || targetBatch.name.includes(r.month)
+                  ? { ...r, status: 'Paid' as const }
+                  : r
+              )
+            : state.records,
+        }))
+      },
+
+      markRecordPaid: (recordId) => {
+        set((state) => ({
+          records: state.records.map((r) =>
+            r.id === recordId ? { ...r, status: 'Paid' as const } : r
           ),
         }))
       },

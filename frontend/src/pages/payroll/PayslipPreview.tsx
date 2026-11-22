@@ -42,6 +42,7 @@ import type { PayrollRecord } from '@/types'
 
 export default function PayslipPreview() {
   const records = usePayrollStore((state) => state.records)
+  const markRecordPaid = usePayrollStore((state) => state.markRecordPaid)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [generateOpen, setGenerateOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -290,6 +291,20 @@ export default function PayslipPreview() {
             emptyTitle="No payslip records yet"
             rowActions={(row) => (
               <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
+                {row.status === 'Processing' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                    title="Disburse / Mark as Paid"
+                    onClick={() => {
+                      markRecordPaid(row.id)
+                      toast.success(`Salary of ${formatCurrency(row.netPay)} marked as Paid for ${row.employee}`)
+                    }}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -399,6 +414,19 @@ export default function PayslipPreview() {
 
                   {/* Actions for this payslip */}
                   <div className="flex flex-col gap-2 pt-2">
+                    {record.status === 'Processing' && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          markRecordPaid(record.id)
+                          toast.success(`Salary of ${formatCurrency(record.netPay)} disbursed to ${record.employee}`)
+                        }}
+                        className="w-full text-xs justify-center bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                        Disburse / Pay Salary
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -611,6 +639,19 @@ export default function PayslipPreview() {
                 <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
                   Close
                 </Button>
+                {record.status === 'Processing' && (
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => {
+                      markRecordPaid(record.id)
+                      toast.success(`Salary of ${formatCurrency(record.netPay)} marked as Paid for ${record.employee}`)
+                    }}
+                  >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    Disburse & Pay
+                  </Button>
+                )}
                 <Button size="sm" onClick={() => window.print()}>
                   <Printer className="mr-1.5 h-4 w-4" />
                   Print Payslip
