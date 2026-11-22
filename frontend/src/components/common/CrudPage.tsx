@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
-import { randomId } from '@/lib/utils'
+import { cn, randomId } from '@/lib/utils'
 
 export interface FormFieldDef {
   key: string
@@ -35,13 +35,21 @@ interface CrudPageProps<T extends { id: string }> {
   toValues: (row: T) => Record<string, string>
   fromValues: (values: Record<string, string>, id: string) => T
   onAdd?: () => void
+  onView?: (row: T) => void
+  renderRowActions?: (row: T, handlers: {
+    onView?: () => void
+    onEdit: () => void
+    onDelete: () => void
+  }) => ReactNode
+  actionsHeaderClassName?: string
+  actionsHeaderLabel?: string
   searchPlaceholder?: string
   pageSize?: number
 }
 
 export function CrudPage<T extends { id: string }>({
   title, description, data, columns, filters = [], fields, entityName, toValues, fromValues,
-  onAdd, searchPlaceholder, pageSize,
+  onAdd, onView, renderRowActions, actionsHeaderClassName, actionsHeaderLabel, searchPlaceholder, pageSize,
 }: CrudPageProps<T>) {
   const [rows, setRows] = useState<T[]>(data)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -82,8 +90,15 @@ export function CrudPage<T extends { id: string }>({
   }
 
   const actionColumn: Column<T> = {
-    key: 'actions', header: '', className: 'text-right',
-    cell: (row) => (
+    key: 'actions', header: actionsHeaderLabel ?? '',
+    className: cn('text-right', actionsHeaderClassName),
+    cell: (row) => renderRowActions ? (
+      renderRowActions(row, {
+        onView: onView ? () => onView(row) : undefined,
+        onEdit: () => openEdit(row),
+        onDelete: () => setDeleting(row),
+      })
+    ) : (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
