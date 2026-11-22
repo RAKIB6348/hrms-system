@@ -72,7 +72,8 @@ The application was built with a feature-based architecture and reusable compone
 - Payroll dashboard with cost trends, batch progress, and recent records.
 - Salary structure management.
 - Payroll batches with processing status and mark-paid action.
-- Printable payslip preview with earnings, deductions, and net pay.
+- Demo payslip generation from mock employee/salary data, with a searchable and filterable payslip records list.
+- Printable and downloadable payslip detail view with earnings, deductions, and net pay.
 
 ### Performance
 
@@ -275,7 +276,7 @@ No environment configuration is required.
 - No API keys, database URLs, or credentials are needed.
 - The application never calls an external service; all data comes from local mock modules.
 - The development port (`5173`) and the `@` import alias are configured directly in `frontend/vite.config.ts`.
-- Theme and company preferences are stored in the browser under the `localStorage` keys `hrms-ui-preferences` and `hrms-company-settings`.
+- Theme, company preferences, and generated demo payroll records are stored in the browser under the `localStorage` keys `hrms-ui-preferences`, `hrms-company-settings`, and `hrms-payroll-store`.
 
 ---
 
@@ -395,7 +396,7 @@ The application remains in demo mode:
 - No database connection exists.
 - There is no real authentication; the profile and sign-out controls display demo notices.
 - Interactions (create, edit, delete, approve, reject, stage changes, status toggles) update local React state.
-- Theme/sidebar preferences and company settings persist via Zustand `persist` in browser `localStorage`.
+- Theme/sidebar preferences, company settings, and generated demo payroll records persist via Zustand `persist` in browser `localStorage`.
 - A visible demo notice appears throughout the UI to remind users that data is fictional.
 
 `frontend/src/hooks/use-mock-query.ts` is the intended integration seam: it currently resolves local data with a short simulated delay so loading skeletons can be exercised. Replacing its loader with a `fetch()` call is the planned way to introduce a real API without changing page components.

@@ -123,6 +123,7 @@ export interface Application {
 
 export interface PayrollRecord {
   id: ID
+  employeeId: string
   employee: string
   department: string
   month: string
@@ -131,6 +132,8 @@ export interface PayrollRecord {
   deductions: number
   netPay: number
   status: PayrollStatus
+  /** True for records created through the in-app demo payslip generator. */
+  generated?: boolean
 }
 
 export interface PayrollBatch {

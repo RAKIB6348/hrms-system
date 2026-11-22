@@ -9,10 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { StatusBadge } from '@/components/common/StatusBadge'
-import { payrollBatches, payrollRecords, salaryTrend } from '@/mocks/data'
+import { salaryTrend } from '@/mocks/data'
+import { usePayrollStore } from '@/hooks/use-payroll-store'
 import { formatCurrency } from '@/lib/utils'
 
 export default function PayrollDashboard() {
+  // Shared, persisted payroll source keeps this dashboard in sync with the
+  // batches and payslip pages without changing the existing dashboard design.
+  const batches = usePayrollStore((state) => state.batches)
+  const records = usePayrollStore((state) => state.records)
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -54,7 +60,7 @@ export default function PayrollDashboard() {
             <Button variant="ghost" size="sm" asChild><Link to="/payroll/batches">View all <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {payrollBatches.map((batch) => (
+            {batches.map((batch) => (
               <div key={batch.id} className="flex items-center gap-3 rounded-lg border p-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileText className="h-4 w-4" /></div>
                 <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{batch.name}</p><p className="text-xs text-muted-foreground">{batch.employees} employees · {formatCurrency(batch.totalAmount)}</p></div>
@@ -96,7 +102,7 @@ export default function PayrollDashboard() {
           <Button variant="ghost" size="sm" asChild><Link to="/payroll/payslips">View payslips <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
         </CardHeader>
         <CardContent className="space-y-2">
-          {payrollRecords.slice(0, 6).map((record) => (
+          {records.slice(0, 6).map((record) => (
             <div key={record.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
               <div><p className="font-medium">{record.employee}</p><p className="text-xs text-muted-foreground">{record.department}</p></div>
               <div className="flex items-center gap-4"><span className="font-semibold">{formatCurrency(record.netPay)}</span><StatusBadge status={record.status} /></div>

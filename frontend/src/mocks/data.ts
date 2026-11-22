@@ -209,6 +209,7 @@ export const payrollRecords: PayrollRecord[] = Array.from({ length: 24 }, (_, i)
   const statuses: PayrollRecord['status'] = i < 3 ? 'Processing' : i < 18 ? 'Paid' : 'Completed'
   return {
     id: `pay-${i + 1}`,
+    employeeId: emp.employeeId,
     employee: `${emp.firstName} ${emp.lastName}`,
     department: emp.department,
     month: 'November 2026',

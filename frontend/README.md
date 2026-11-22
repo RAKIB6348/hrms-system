@@ -29,7 +29,7 @@ npm run dev        # http://localhost:5173
 - **Recruitment** — dashboard, job openings, create job, job details, applications and a kanban pipeline.
 - **Attendance** — dashboard, daily attendance, history and shift management.
 - **Leave** — dashboard, requests with approve/reject, leave types and a monthly calendar.
-- **Payroll** — dashboard, salary structure, batches and a printable payslip preview.
+- **Payroll** — dashboard, salary structure, batches, demo payslip generation, a searchable payslip records list and a printable/downloadable payslip preview.
 - **Performance** — dashboard, reviews and goals/KPIs.
 - **Employee Finance** — dashboard, loans and salary advances.
 - **Reports** — HR analytics, attendance reports and payroll reports.
@@ -41,6 +41,10 @@ Shared UI: collapsible responsive sidebar with expandable submenus, header with 
 ## Company settings
 
 The demo company defaults to **BDT (৳)** and **Asia/Dhaka (UTC+06:00)**. Both are selectable alongside the existing currency/timezone options, and `Save Changes` persists choices to `localStorage` through the same Zustand persistence mechanism used by the UI preferences, so they survive navigation. Existing saved preferences are preserved on load. `formatCurrency` renders BDT with the ৳ symbol via `Intl.NumberFormat`, and `formatDate` accepts an optional timezone.
+
+## Payroll demo data
+
+Payroll uses a single shared store (`src/hooks/use-payroll-store.ts`) persisted to `localStorage` under `hrms-payroll-store`. The Payroll Dashboard, Payroll Batches, and Payslip Preview all read from it, so generated demo payslips and batches appear everywhere and survive refreshes. Generated payslips are labeled **Demo generated**, start with a `Processing` status, and do not represent real payments.
 
 ## Architecture
 
