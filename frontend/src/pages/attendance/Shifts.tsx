@@ -3,10 +3,13 @@ import { toast } from 'sonner'
 import { CalendarDays, Clock3, Eye, Pencil, Settings2, Trash2, Users } from 'lucide-react'
 import { CrudPage, type FormFieldDef } from '@/components/common/CrudPage'
 import { ActionIconButton } from '@/components/common/ActionIconButton'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { shifts } from '@/mocks/data'
+import { ShiftFormDialog, WEEK_DAYS, type ShiftFormSubmit } from '@/features/attendance/ShiftFormDialog'
+import { useShiftStore, newShiftId } from '@/hooks/use-shift-store'
+import { useEmployeeStore } from '@/hooks/use-employee-store'
 import type { Shift } from '@/types'
 
 const fields: FormFieldDef[] = [
@@ -18,8 +21,56 @@ const fields: FormFieldDef[] = [
   { key: 'flexibility', label: 'Flexibility', type: 'select', options: ['Fixed', 'Flexible ±1h', 'Flexible ±2h'], required: true },
 ]
 
+function daysLabel(days: string[]) {
+  if (days.length === WEEK_DAYS.length) return 'All days'
+  if (days.length === 5 && WEEK_DAYS.slice(0, 5).every((day) => days.includes(day))) return 'Mon – Fri'
+  return days.join(', ')
+}
+
 export default function Shifts() {
+  const shifts = useShiftStore((state) => state.shifts)
+  const addShift = useShiftStore((state) => state.addShift)
+  const updateShift = useShiftStore((state) => state.updateShift)
+  const deleteShift = useShiftStore((state) => state.deleteShift)
+  const assignShift = useEmployeeStore((state) => state.assignShift)
+
   const [viewing, setViewing] = useState<Shift | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<Shift | null>(null)
+  const [deleting, setDeleting] = useState<Shift | null>(null)
+
+  const saveShift = ({ values, employeeIdsChanged }: ShiftFormSubmit) => {
+    const assignedCount = employeeIdsChanged ? values.employeeIds.length : (editing?.employees ?? values.employeeIds.length)
+    const payload: Shift = {
+      ...(editing ?? { id: newShiftId() }),
+      name: values.name,
+      code: values.code,
+      startTime: values.startTime,
+      endTime: values.endTime,
+      breakDuration: Number(values.breakDuration || 0),
+      workingDays: values.workingDays,
+      days: daysLabel(values.workingDays),
+      flexibilityType: values.flexibilityType,
+      flexibility: values.flexibilityType === 'Flexible' ? 'Flexible ±1h' : 'Fixed',
+      gracePeriod: Number(values.gracePeriod || 0),
+      status: values.status,
+      earlyArrivalAllowance: Number(values.earlyArrivalAllowance || 0),
+      lateArrivalAllowance: Number(values.lateArrivalAllowance || 0),
+      employees: assignedCount,
+    }
+
+    if (editing) {
+      updateShift(editing.id, payload)
+      if (employeeIdsChanged) assignShift(values.name, values.employeeIds, editing.name)
+      toast.success('Shift updated successfully')
+    } else {
+      addShift(payload)
+      if (values.employeeIds.length) assignShift(values.name, values.employeeIds)
+      toast.success('Shift created successfully')
+    }
+    setFormOpen(false)
+    setEditing(null)
+  }
 
   return (
     <>
@@ -27,15 +78,18 @@ export default function Shifts() {
         title="Shift Management"
         description="Configure work shifts, timings and flexibility rules."
         data={shifts} entityName="Shift" fields={fields} searchPlaceholder="Search shifts..."
+        disableBuiltInForm
+        onAdd={() => { setEditing(null); setFormOpen(true) }}
+        onEditClick={(shift) => { setEditing(shift); setFormOpen(true) }}
         actionsHeaderClassName="w-[132px] text-right"
         actionsHeaderLabel="Actions"
         onView={(shift) => setViewing(shift)}
-        renderRowActions={(shift, handlers) => {
+        renderRowActions={(shift) => {
           const hasEmployees = shift.employees > 0
           return (
             <div className="flex items-center justify-end gap-1.5">
-              <ActionIconButton variant="view" icon={Eye} label={`View ${shift.name}`} tooltip="View shift details" onClick={handlers.onView} />
-              <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${shift.name}`} tooltip="Edit shift" onClick={handlers.onEdit} />
+              <ActionIconButton variant="view" icon={Eye} label={`View ${shift.name}`} tooltip="View shift details" onClick={() => setViewing(shift)} />
+              <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${shift.name}`} tooltip="Edit shift" onClick={() => { setEditing(shift); setFormOpen(true) }} />
               <ActionIconButton
                 variant="delete"
                 icon={Trash2}
@@ -47,7 +101,7 @@ export default function Shifts() {
                     toast.warning(`${shift.name} has ${shift.employees} assigned employees — deletion is not allowed`)
                     return
                   }
-                  handlers.onDelete()
+                  setDeleting(shift)
                 }}
               />
             </div>
@@ -62,6 +116,22 @@ export default function Shifts() {
         ]}
         toValues={(s: Shift) => ({ name: s.name, startTime: s.startTime, endTime: s.endTime, days: s.days, employees: String(s.employees), flexibility: s.flexibility })}
         fromValues={(v, id): Shift => ({ id, name: v.name!, startTime: v.startTime!, endTime: v.endTime!, days: v.days!, employees: Number(v.employees), flexibility: v.flexibility! })}
+      />
+
+      <ShiftFormDialog
+        key={editing?.id ?? 'new-shift'}
+        open={formOpen}
+        onOpenChange={(open) => { setFormOpen(open); if (!open) setEditing(null) }}
+        shift={editing}
+        onSubmit={saveShift}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}
+        title="Delete shift?"
+        description={`Remove "${deleting?.name ?? ''}" from the demo shift list?`}
+        confirmLabel="Delete"
+        onConfirm={() => { if (deleting) { deleteShift(deleting.id); toast.success('Shift deleted') } }}
       />
 
       <Dialog open={Boolean(viewing)} onOpenChange={(open) => !open && setViewing(null)}>

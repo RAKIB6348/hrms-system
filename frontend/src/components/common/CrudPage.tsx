@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { AlertCircle, MoreHorizontal, Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DemoNotice } from '@/components/common/DemoNotice'
 import { DataTable, type Column, type TableFilter } from '@/components/common/DataTable'
@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal } from 'lucide-react'
 import { cn, randomId } from '@/lib/utils'
 
 export interface FormFieldDef {
@@ -32,9 +31,13 @@ interface CrudPageProps<T extends { id: string }> {
   filters?: TableFilter<T>[]
   fields: FormFieldDef[]
   entityName: string
+  entityIcon?: any
   toValues: (row: T) => Record<string, string>
   fromValues: (values: Record<string, string>, id: string) => T
   onAdd?: () => void
+  onEditClick?: (row: T) => void
+  /** Replaces the generic create/edit dialog with a page-provided form. */
+  disableBuiltInForm?: boolean
   onView?: (row: T) => void
   renderRowActions?: (row: T, handlers: {
     onView?: () => void
@@ -48,10 +51,11 @@ interface CrudPageProps<T extends { id: string }> {
 }
 
 export function CrudPage<T extends { id: string }>({
-  title, description, data, columns, filters = [], fields, entityName, toValues, fromValues,
-  onAdd, onView, renderRowActions, actionsHeaderClassName, actionsHeaderLabel, searchPlaceholder, pageSize,
+  title, description, data, columns, filters = [], fields, entityName, entityIcon: EntityIcon, toValues, fromValues,
+  onAdd, onEditClick, disableBuiltInForm, onView, renderRowActions, actionsHeaderClassName, actionsHeaderLabel, searchPlaceholder, pageSize,
 }: CrudPageProps<T>) {
   const [rows, setRows] = useState<T[]>(data)
+  useEffect(() => { setRows(data) }, [data])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
@@ -60,6 +64,7 @@ export function CrudPage<T extends { id: string }>({
 
   const openCreate = () => {
     onAdd?.()
+    if (disableBuiltInForm) return
     setEditing(null)
     setValues(Object.fromEntries(fields.map((f) => [f.key, f.type === 'select' ? (f.options?.[0] ?? '') : ''])))
     setErrors({})
@@ -67,6 +72,7 @@ export function CrudPage<T extends { id: string }>({
   }
 
   const openEdit = (row: T) => {
+    if (disableBuiltInForm) { onEditClick?.(row); return }
     setEditing(row)
     setValues(toValues(row))
     setErrors({})
@@ -116,7 +122,14 @@ export function CrudPage<T extends { id: string }>({
       <PageHeader
         title={title}
         description={description}
-        actions={<Button onClick={openCreate}><Plus className="h-4 w-4" /> Add {entityName}</Button>}
+        actions={
+          <Button
+            onClick={openCreate}
+            className="h-[42px] px-5 rounded-lg text-xs font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-md shadow-indigo-500/25 transition-all"
+          >
+            <Plus className="h-4 w-4 mr-1.5" /> Add {entityName}
+          </Button>
+        }
       />
       <DemoNotice compact />
       <DataTable
@@ -125,42 +138,103 @@ export function CrudPage<T extends { id: string }>({
       />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing ? `Edit ${entityName}` : `Add ${entityName}`}</DialogTitle>
-            <DialogDescription>
-              {editing ? 'Update the information below.' : 'Fill in the details to create a new record.'} Changes are stored locally in this demo.
-            </DialogDescription>
+        <DialogContent className="max-w-xl rounded-2xl border border-[#E2E8F0] bg-white p-6 sm:p-7 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          <DialogHeader className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] ring-1 ring-indigo-500/10 dark:bg-indigo-950/50 dark:text-indigo-400">
+                {editing ? <Pencil className="h-5 w-5" /> : (EntityIcon ? <EntityIcon className="h-5 w-5" /> : <Plus className="h-5 w-5" />)}
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-slate-100">
+                  {editing ? `Edit ${entityName}` : `Add ${entityName}`}
+                </DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+                  {editing
+                    ? `Update the details below for this ${entityName.toLowerCase()}.`
+                    : `Fill in the details to create a new ${entityName.toLowerCase()} record.`} Changes are stored locally in this demo.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <div className="grid gap-4 py-2 sm:grid-cols-2">
+
+          <div className="grid gap-4 py-3 sm:grid-cols-2">
             {fields.map((field) => (
-              <div key={field.key} className={('space-y-1.5 ' + (field.type === 'textarea' ? 'sm:col-span-2' : ''))}>
-                <Label htmlFor={field.key}>
-                  {field.label}{field.required && <span className="ml-0.5 text-destructive">*</span>}
-                </Label>
+              <div
+                key={field.key}
+                className={cn('space-y-1.5', field.type === 'textarea' ? 'sm:col-span-2' : '')}
+              >
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={field.key} className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    {field.label}
+                    {field.required && <span className="ml-1 text-rose-500 font-bold">*</span>}
+                  </Label>
+                </div>
+
                 {field.type === 'select' ? (
-                  <Select value={values[field.key] ?? ''} onValueChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}>
-                    <SelectTrigger id={field.key}><SelectValue /></SelectTrigger>
-                    <SelectContent>{field.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                  <Select
+                    value={values[field.key] ?? ''}
+                    onValueChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}
+                  >
+                    <SelectTrigger
+                      id={field.key}
+                      className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3.5 text-sm shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20"
+                    >
+                      <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.options?.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 ) : field.type === 'textarea' ? (
                   <Textarea
-                    id={field.key} value={values[field.key] ?? ''} placeholder={field.placeholder}
+                    id={field.key}
+                    value={values[field.key] ?? ''}
+                    placeholder={field.placeholder}
+                    className="rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-3 text-sm leading-relaxed shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20"
                     onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
                   />
                 ) : (
                   <Input
-                    id={field.key} type={field.type ?? 'text'} value={values[field.key] ?? ''} placeholder={field.placeholder}
+                    id={field.key}
+                    type={field.type ?? 'text'}
+                    value={values[field.key] ?? ''}
+                    placeholder={field.placeholder}
+                    className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3.5 text-sm shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20"
                     onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
                   />
                 )}
-                {errors[field.key] && <p className="text-xs text-destructive">{errors[field.key]}</p>}
+
+                {errors[field.key] && (
+                  <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1 animate-fade-in">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {errors[field.key]}
+                  </p>
+                )}
               </div>
             ))}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save}>{editing ? 'Save Changes' : `Create ${entityName}`}</Button>
+
+          <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              className="h-[42px] px-4 rounded-lg text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={save}
+              className="h-[42px] px-5 rounded-lg text-xs font-semibold bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5"
+            >
+              {editing ? <Save className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+              {editing ? 'Save Changes' : `Create ${entityName}`}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

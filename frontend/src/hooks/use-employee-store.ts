@@ -8,6 +8,7 @@ interface EmployeeStoreState {
   addEmployee: (employee: Employee) => void
   updateEmployee: (id: string, patch: Partial<Employee>) => void
   deleteEmployee: (id: string) => void
+  assignShift: (shiftName: string, employeeIds: string[], previousName?: string) => void
 }
 
 /**
@@ -22,6 +23,14 @@ export const useEmployeeStore = create<EmployeeStoreState>((set) => ({
     employees: state.employees.map((employee) => employee.id === id ? { ...employee, ...patch } : employee),
   })),
   deleteEmployee: (id) => set((state) => ({ employees: state.employees.filter((employee) => employee.id !== id) })),
+  assignShift: (shiftName, employeeIds, previousName) => set((state) => ({
+    employees: state.employees.map((employee) => {
+      const selected = employeeIds.includes(employee.id)
+      if (selected) return { ...employee, shift: shiftName }
+      if (previousName && employee.shift === previousName) return { ...employee, shift: '' }
+      return employee
+    }),
+  })),
 }))
 
 /** Generates the next unique PF-style employee ID from the current records. */

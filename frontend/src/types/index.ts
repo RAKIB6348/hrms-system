@@ -136,6 +136,14 @@ export interface Shift {
   employees: number
   days: string
   flexibility: string
+  code?: string
+  breakDuration?: number
+  workingDays?: string[]
+  flexibilityType?: 'Fixed' | 'Flexible'
+  gracePeriod?: number
+  status?: 'Active' | 'Inactive'
+  earlyArrivalAllowance?: number
+  lateArrivalAllowance?: number
 }
 
 export interface LeaveRequest {
