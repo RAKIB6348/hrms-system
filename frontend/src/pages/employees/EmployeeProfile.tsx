@@ -3,17 +3,26 @@ import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft, CalendarDays, Cake, Mail, MapPin, Phone, UserRound, Wallet, BriefcaseBusiness,
-  FileText, Download, MoreHorizontal,
+  FileText, Download, Pencil,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { DemoNotice } from '@/components/common/DemoNotice'
 import { StatCard } from '@/components/common/StatCard'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { EmptyState } from '@/components/common/EmptyState'
+import { EmployeeForm, employeeFromFormValues } from '@/features/employees/EmployeeForm'
 import { attendanceRecords } from '@/mocks/data'
 import { useEmployeeStore } from '@/hooks/use-employee-store'
 import { formatCurrency, formatDate, initials } from '@/lib/utils'
@@ -21,18 +30,45 @@ import { formatCurrency, formatDate, initials } from '@/lib/utils'
 export default function EmployeeProfile() {
   const { id } = useParams()
   const [tab, setTab] = useState('overview')
-  const employee = useEmployeeStore((state) => state.employees.find((e) => e.id === id))
+  const [editing, setEditing] = useState(false)
+  const updateEmployee = useEmployeeStore((state) => state.updateEmployee)
+
+  const employee = useEmployeeStore((state) => {
+    if (id) {
+      return state.employees.find((e) => e.id === id)
+    }
+    // Default to the current logged-in demo user (Meera Nair)
+    return (
+      state.employees.find((e) => e.email === 'meera.nair@peopleflow.io') ||
+      state.employees.find((e) => e.id === 'emp-6') ||
+      state.employees[0]
+    )
+  })
 
   if (!employee) {
-    return <EmptyState icon={UserRound} title="Employee not found" description="This employee record does not exist in the demo data." actionLabel="Back to employees" onAction={() => window.history.back()} />
+    return (
+      <EmptyState
+        icon={UserRound}
+        title="Employee not found"
+        description="This employee record does not exist in the demo data."
+        actionLabel="Back to employees"
+        onAction={() => window.history.back()}
+      />
+    )
   }
 
+  const isCurrentUser = !id || employee.email === 'meera.nair@peopleflow.io' || employee.id === 'emp-6'
   const name = `${employee.firstName} ${employee.lastName}`
   const attendance = attendanceRecords.filter((a) => a.employeeId === employee.id)
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" asChild><Link to="/employees"><ArrowLeft className="h-4 w-4" /> Back to employees</Link></Button>
+      <Button variant="ghost" size="sm" asChild>
+        <Link to={id ? '/employees' : '/dashboard'}>
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          {id ? 'Back to employees' : 'Back to dashboard'}
+        </Link>
+      </Button>
       <DemoNotice compact />
 
       <Card className="overflow-hidden">
@@ -41,20 +77,31 @@ export default function EmployeeProfile() {
           <div className="-mt-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <Avatar className="h-24 w-24 border-4 border-card shadow-lg">
-                <AvatarFallback className="text-2xl" style={{ backgroundColor: employee.avatarColor, color: '#fff' }}>{initials(name)}</AvatarFallback>
+                <AvatarFallback className="text-2xl" style={{ backgroundColor: employee.avatarColor, color: '#fff' }}>
+                  {initials(name)}
+                </AvatarFallback>
               </Avatar>
               <div className="space-y-1 pb-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
                   <StatusBadge status={employee.status} />
+                  {isCurrentUser && (
+                    <Badge variant="outline" className="text-xs bg-indigo-50/60 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">
+                      Current User
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">{employee.designation} · {employee.department}</p>
                 <p className="font-mono text-xs text-muted-foreground">{employee.employeeId}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 pb-1">
-              <Button variant="outline" onClick={() => toast.info('Demo: profile editing is not connected')}><MoreHorizontal className="h-4 w-4" /> Actions</Button>
-              <Button onClick={() => toast.success(`Message sent to ${name} (demo)`)}><Mail className="h-4 w-4" /> Send message</Button>
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                <Pencil className="h-4 w-4 mr-1.5" /> Edit Profile
+              </Button>
+              <Button onClick={() => toast.success(`Message sent to ${name} (demo)`)}>
+                <Mail className="h-4 w-4 mr-1.5" /> Send message
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -241,6 +288,86 @@ export default function EmployeeProfile() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editing} onOpenChange={setEditing}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isCurrentUser ? 'Edit My Profile' : `Edit ${name}`}</DialogTitle>
+            <DialogDescription>
+              Update employee information. Changes will update your active session.
+            </DialogDescription>
+          </DialogHeader>
+          <EmployeeForm
+            employeeId={employee.employeeId}
+            submitLabel="Save Changes"
+            excludeEmployeeId={employee.id}
+            defaultValues={{
+              photo: null,
+              firstName: employee.firstName,
+              middleName: employee.middleName ?? '',
+              lastName: employee.lastName,
+              dob: employee.dob,
+              gender: employee.gender ?? '',
+              maritalStatus: employee.maritalStatus ?? '',
+              bloodGroup: employee.bloodGroup ?? '',
+              nationality: employee.nationality ?? '',
+              fatherName: employee.fatherName ?? '',
+              motherName: employee.motherName ?? '',
+              personalEmail: employee.personalEmail ?? '',
+              workEmail: employee.email,
+              primaryMobile: employee.phone,
+              alternativeMobile: employee.alternativeMobile ?? '',
+              presentAddress: employee.presentAddress ?? employee.address ?? '',
+              permanentAddress: employee.permanentAddress ?? '',
+              sameAsPresent: false,
+              city: employee.city ?? '',
+              district: employee.district ?? '',
+              postalCode: employee.postalCode ?? '',
+              country: employee.country ?? '',
+              nidNumber: employee.nidNumber ?? '',
+              birthRegistrationNumber: employee.birthRegistrationNumber ?? '',
+              passportNumber: employee.passportNumber ?? '',
+              passportExpiryDate: employee.passportExpiryDate ?? '',
+              tin: employee.tin ?? '',
+              employeeId: employee.employeeId,
+              joinDate: employee.joinDate,
+              department: employee.department,
+              designation: employee.designation,
+              employmentType: employee.employmentType,
+              managerId: employee.managerId ?? '',
+              manager: employee.manager,
+              employmentStatus: employee.employeeStatus ?? employee.status,
+              workLocation: employee.location,
+              workMode: employee.workMode ?? 'On-site',
+              probationStart: employee.probationStart ?? '',
+              probationEnd: employee.probationEnd ?? '',
+              confirmationDate: employee.confirmationDate ?? '',
+              contractStart: employee.contractStart ?? '',
+              contractEnd: employee.contractEnd ?? '',
+              shift: employee.shift ?? '',
+              weeklyWorkingDays: employee.weeklyWorkingDays ?? '',
+              standardHours: employee.standardHours ?? '',
+              attendancePolicy: employee.attendancePolicy ?? '',
+              salaryType: employee.salaryType ?? 'Monthly',
+              basicSalary: String(employee.grossSalary ?? Math.round(employee.salary / 12)),
+              hra: String(employee.hra ?? 0),
+              medicalAllowance: String(employee.medicalAllowance ?? 0),
+              transportAllowance: String(employee.transportAllowance ?? 0),
+              otherAllowances: String(employee.otherAllowances ?? 0),
+              paymentMethod: employee.paymentMethod ?? 'Bank Transfer',
+              education: employee.education ?? [],
+              experience: employee.experience ?? [],
+              emergencyContacts: employee.emergencyContacts ?? [],
+            }}
+            onCancel={() => setEditing(false)}
+            onSubmit={(values) => {
+              updateEmployee(employee.id, employeeFromFormValues(values, employee.employeeId, employee))
+              toast.success(`${isCurrentUser ? 'Your profile' : name} has been updated`)
+              setEditing(false)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

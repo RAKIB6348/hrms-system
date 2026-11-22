@@ -155,7 +155,7 @@ export function Header() {
                 <p className="text-xs font-normal text-muted-foreground">meera.nair@peopleflow.io</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link to="/employees"><UserRound className="h-4 w-4" /> My profile</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/profile"><UserRound className="h-4 w-4" /> My profile</Link></DropdownMenuItem>
               <DropdownMenuItem asChild><Link to="/settings/general"><Settings className="h-4 w-4" /> Preferences</Link></DropdownMenuItem>
               <DropdownMenuItem asChild><Link to="/reports"><CircleHelp className="h-4 w-4" /> Help & support</Link></DropdownMenuItem>
               <DropdownMenuSeparator />

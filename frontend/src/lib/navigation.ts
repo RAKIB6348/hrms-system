@@ -106,6 +106,7 @@ export const navigation: NavItem[] = [
 
 export const routeTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
+  '/profile': 'My Profile',
   '/employees': 'Employee List',
   '/employees/new': 'Add Employee',
   '/employees/departments': 'Departments',

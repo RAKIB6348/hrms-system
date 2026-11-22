@@ -69,6 +69,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
 
       { path: 'dashboard', element: <Dashboard /> },
+      { path: 'profile', element: <EmployeeProfile /> },
 
       { path: 'employees', element: <EmployeeList /> },
       { path: 'employees/new', element: <AddEmployee /> },
