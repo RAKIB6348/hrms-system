@@ -274,6 +274,16 @@ export interface Goal {
   status: 'On Track' | 'At Risk' | 'Completed' | 'Overdue'
 }
 
+export interface LoanInstallment {
+  id: string
+  number: number
+  dueDate: string
+  amount: number
+  status: 'Paid' | 'Pending' | 'Overdue'
+  paidDate?: string
+  paymentReference?: string
+}
+
 export interface Loan {
   id: ID
   employee: string
@@ -284,6 +294,9 @@ export interface Loan {
   startDate: string
   endDate: string
   status: 'Active' | 'Completed' | 'Pending'
+  totalInstallments?: number
+  paidInstallments?: number
+  installments?: LoanInstallment[]
 }
 
 export interface Advance {

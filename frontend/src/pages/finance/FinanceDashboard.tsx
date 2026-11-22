@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { StatusBadge } from '@/components/common/StatusBadge'
-import { advances, loans } from '@/mocks/data'
+import { useFinanceStore } from '@/hooks/use-finance-store'
 import { formatCurrency } from '@/lib/utils'
 
 const recovery = [
@@ -19,6 +19,8 @@ const recovery = [
 ]
 
 export default function FinanceDashboard() {
+  const loans = useFinanceStore((s) => s.loans)
+  const advances = useFinanceStore((s) => s.advances)
   const totalOutstanding = loans.reduce((sum, l) => sum + l.outstanding, 0)
   const pendingAdvances = advances.filter((a) => a.status === 'Pending')
 
