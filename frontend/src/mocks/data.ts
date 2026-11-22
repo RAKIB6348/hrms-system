@@ -184,10 +184,10 @@ export const jobOpenings: JobOpening[] = [
   { id: 'job-8', title: 'Marketing Content Lead', department: 'Marketing', location: 'London', type: 'Part-time', status: 'Closed', postedOn: '2026-08-14', closesOn: '2026-10-01', applicants: 56, salaryRange: '$60k – $80k', hiringManager: 'Isha Kapoor', description: 'Lead content strategy across all marketing channels.', requirements: ['Editorial excellence', 'SEO knowledge', 'B2B SaaS writing'] },
 ]
 
-const candidateNames = ['Oliver格兰', 'Ethan Brooks', 'Lucas Meyer', 'Maya Chen', 'Sofia Rossi', 'Noah Williams', 'Amelia Clarke', 'Liam O\'Connor', 'Ella Novak', 'James Taylor', 'Chloe Dubois', 'Henry Kim', 'Grace Silva', 'Jack Wilson', 'Zoe Martin']
+const candidateNames = ['Oliver Grant', 'Ethan Brooks', 'Lucas Meyer', 'Maya Chen', 'Sofia Rossi', 'Noah Williams', 'Amelia Clarke', 'Liam O\'Connor', 'Ella Novak', 'James Taylor', 'Chloe Dubois', 'Henry Kim', 'Grace Silva', 'Jack Wilson', 'Zoe Martin']
 
 export const applications: Application[] = Array.from({ length: 18 }, (_, i) => {
-  const name = candidateNames[i % candidateNames.length]!.replace('格兰', 'Grant')
+  const name = candidateNames[i % candidateNames.length]!
   const stages: Application['stage'][] = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected']
   return {
     id: `app-${i + 1}`,
