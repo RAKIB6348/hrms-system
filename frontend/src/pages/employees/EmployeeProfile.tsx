@@ -423,24 +423,24 @@ export default function EmployeeProfile() {
   const activePhoto = previewPhoto || employee.photoUrl
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-3.5 max-w-7xl mx-auto pb-6">
       {/* Top Breadcrumb Navigation */}
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
           asChild
-          className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 -ml-2 h-8"
+          className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 -ml-2 h-7 px-2"
         >
           <Link to={id ? '/employees' : '/dashboard'}>
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             {id ? 'Back to employee directory' : 'Back to dashboard'}
           </Link>
         </Button>
 
         {isEditing && (
-          <Badge className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-semibold px-3 py-1 shadow-sm flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Badge className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-semibold px-2.5 py-0.5 shadow-xs flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Editing {getTabTitle(tab)}
           </Badge>
         )}
@@ -449,27 +449,21 @@ export default function EmployeeProfile() {
       <DemoNotice compact />
 
       {/* ======================================================== */}
-      {/* EXECUTIVE PROFILE BANNER                                 */}
+      {/* PROFILE HEADER CARD (CLEAN WHITE, NO DECORATIVE BANNER)   */}
       {/* ======================================================== */}
-      <Card className="overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
-        {/* Ambient Dark Mesh Banner */}
-        <div className="relative h-36 bg-gradient-to-r from-[#0F172A] via-[#1E1B4B] to-[#0F172A] overflow-hidden">
-          <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#4F46E5_1px,transparent_1px)] [background-size:16px_16px]" />
-          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
-          <div className="absolute right-1/3 -bottom-10 h-40 w-40 rounded-full bg-violet-500/15 blur-2xl pointer-events-none" />
-        </div>
-
-        <CardContent className="relative px-6 sm:px-8 pb-6">
-          <div className="-mt-16 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <Card className="border border-slate-200/80 dark:border-slate-800 shadow-2xs rounded-2xl bg-white dark:bg-slate-900">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* Avatar & Personal Identity */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-              <div className="relative group self-start">
-                <Avatar className="h-28 w-28 sm:h-32 sm:w-32 border-4 border-white dark:border-slate-900 shadow-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 rounded-2xl bg-white dark:bg-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Profile Photo */}
+              <div className="relative self-start sm:self-center shrink-0">
+                <Avatar className="h-20 w-20 sm:h-22 sm:w-22 border border-slate-200/80 dark:border-slate-700 shadow-2xs overflow-hidden rounded-2xl bg-slate-50 dark:bg-slate-800">
                   {activePhoto ? (
                     <img src={activePhoto} alt={name} className="h-full w-full object-cover" />
                   ) : (
                     <AvatarFallback
-                      className="text-3xl font-bold rounded-2xl"
+                      className="text-2xl font-bold rounded-2xl"
                       style={{ backgroundColor: employee.avatarColor, color: '#fff' }}
                     >
                       {initials(name)}
@@ -484,14 +478,14 @@ export default function EmployeeProfile() {
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
                       className={cn(
-                        'absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl shadow-md border-2 border-white dark:border-slate-900 transition-all duration-150',
+                        'absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-xl shadow-md border-2 border-white dark:border-slate-900 transition-all duration-150',
                         isEditing
                           ? 'bg-[#4F46E5] text-white hover:bg-indigo-700 scale-105 ring-2 ring-indigo-500/20'
                           : 'bg-slate-900/90 text-white hover:bg-[#4F46E5] opacity-90 group-hover:opacity-100',
                       )}
                       aria-label="Upload profile photo"
                     >
-                      <Camera className="h-4 w-4" />
+                      <Camera className="h-3.5 w-3.5" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right">Change profile picture</TooltipContent>
@@ -506,45 +500,46 @@ export default function EmployeeProfile() {
                 />
               </div>
 
-              <div className="space-y-1.5 pb-1">
+              {/* Text block: 100% on card background, zero overlap with dark banner! */}
+              <div className="space-y-0.5 pt-1 sm:pt-2">
                 {/* Name & Badges */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                     {name}
                   </h1>
                   <StatusBadge status={employee.status} />
                   {isCurrentUser && (
-                    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-[#4F46E5] border border-indigo-200/80 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800">
+                    <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-[#4F46E5] border border-indigo-200/80 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800">
                       You (Signed in)
                     </span>
                   )}
                 </div>
 
                 {/* Designation & Department */}
-                <p className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">
+                <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {employee.designation}{' '}
                   <span className="text-slate-400 dark:text-slate-500 font-normal">·</span>{' '}
                   <span className="text-[#4F46E5] dark:text-indigo-400 font-medium">{employee.department}</span>
                 </p>
 
-                {/* Metadata Pills */}
+                {/* Metadata row */}
                 <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200/60 dark:border-slate-700/60">
+                  <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200/60 dark:border-slate-700/60">
                     {employee.employeeId}
                   </span>
                   <span>·</span>
                   <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                    <MapPin className="h-3 w-3 text-slate-400" />
                     {employee.location}
                   </span>
                   <span>·</span>
                   <span className="flex items-center gap-1">
-                    <BriefcaseBusiness className="h-3.5 w-3.5 text-slate-400" />
+                    <BriefcaseBusiness className="h-3 w-3 text-slate-400" />
                     {employee.employmentType}
                   </span>
                   <span>·</span>
                   <span className="flex items-center gap-1">
-                    <Mail className="h-3.5 w-3.5 text-slate-400" />
+                    <Mail className="h-3 w-3 text-slate-400" />
                     {employee.email}
                   </span>
                 </div>
@@ -552,7 +547,7 @@ export default function EmployeeProfile() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2 pb-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0 shrink-0 self-start sm:self-center">
               {activePhoto && (
                 <Button
                   type="button"
@@ -571,16 +566,16 @@ export default function EmployeeProfile() {
                     type="button"
                     variant="outline"
                     onClick={cancelEdit}
-                    className="h-10 px-4 rounded-xl font-medium text-xs border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="h-9 px-3.5 rounded-xl font-medium text-xs border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    <X className="h-4 w-4 mr-1.5 text-slate-500" /> Cancel
+                    <X className="h-4 w-4 mr-1 text-slate-500" /> Cancel
                   </Button>
                   <Button
                     type="button"
                     onClick={saveChanges}
-                    className="h-10 px-5 rounded-xl font-semibold text-xs bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-md shadow-indigo-500/25 transition-all"
+                    className="h-9 px-4 rounded-xl font-semibold text-xs bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-sm shadow-indigo-500/25 transition-all"
                   >
-                    <Check className="h-4 w-4 mr-1.5" /> Save Changes
+                    <Check className="h-4 w-4 mr-1" /> Save Changes
                   </Button>
                 </>
               ) : (
@@ -588,7 +583,7 @@ export default function EmployeeProfile() {
                   <Button
                     type="button"
                     onClick={() => startEdit()}
-                    className="h-10 px-5 rounded-xl font-semibold text-xs bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-md shadow-indigo-500/25 transition-all flex items-center gap-1.5"
+                    className="h-9 px-4 rounded-xl font-semibold text-xs bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-sm shadow-indigo-500/25 transition-all flex items-center gap-1.5"
                   >
                     <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Profile
                   </Button>
@@ -598,7 +593,7 @@ export default function EmployeeProfile() {
                       type="button"
                       variant="outline"
                       onClick={() => toast.success('Profile summary exported (demo)')}
-                      className="h-10 px-4 rounded-xl font-medium text-xs border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      className="h-9 px-3.5 rounded-xl font-medium text-xs border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                     >
                       <Download className="h-3.5 w-3.5 mr-1.5" /> Export CV
                     </Button>
@@ -606,7 +601,7 @@ export default function EmployeeProfile() {
                     <Button
                       type="button"
                       onClick={() => toast.success(`Message sent to ${name} (demo)`)}
-                      className="h-10 px-4 rounded-xl font-semibold text-xs bg-[#0F172A] hover:bg-slate-800 text-white shadow-2xs"
+                      className="h-9 px-4 rounded-xl font-semibold text-xs bg-[#0F172A] hover:bg-slate-800 text-white shadow-2xs"
                     >
                       <Mail className="h-3.5 w-3.5 mr-1.5" /> Send message
                     </Button>
@@ -619,17 +614,17 @@ export default function EmployeeProfile() {
       </Card>
 
       {/* ======================================================== */}
-      {/* 4 REFINED KPI SUMMARY CARDS                              */}
+      {/* 4 REFINED KPI SUMMARY CARDS (COMPACT)                    */}
       {/* ======================================================== */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Role & Team */}
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-[#4F46E5] dark:text-indigo-400">
-              <ShieldCheck className="h-5 w-5" />
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-[#4F46E5] dark:text-indigo-400">
+              <ShieldCheck className="h-4.5 w-4.5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Role & Team
               </p>
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">
@@ -642,12 +637,12 @@ export default function EmployeeProfile() {
 
         {/* Card 2: Work Location & Mode */}
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
-              <MapPin className="h-5 w-5" />
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
+              <MapPin className="h-4.5 w-4.5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Location & Mode
               </p>
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">
@@ -660,12 +655,12 @@ export default function EmployeeProfile() {
 
         {/* Card 3: Tenure & Joining */}
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-              <CalendarDays className="h-5 w-5" />
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+              <CalendarDays className="h-4.5 w-4.5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Tenure & Joining
               </p>
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">
@@ -678,12 +673,12 @@ export default function EmployeeProfile() {
 
         {/* Card 4: Reporting Structure */}
         <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
-              <UserCheck className="h-5 w-5" />
+          <CardContent className="p-3.5 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
+              <UserCheck className="h-4.5 w-4.5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Reports To
               </p>
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">
@@ -698,9 +693,9 @@ export default function EmployeeProfile() {
       {/* ======================================================== */}
       {/* TABS CONTAINER                                           */}
       {/* ======================================================== */}
-      <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
+      <Tabs value={tab} onValueChange={handleTabChange} className="space-y-3">
         {/* Modern Tabs Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-slate-200 dark:border-slate-800 pb-2">
           <TabsList className="w-full justify-start overflow-x-auto sm:w-auto bg-slate-100/80 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
             <TabsTrigger
               value="overview"
