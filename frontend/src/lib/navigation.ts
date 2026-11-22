@@ -59,8 +59,15 @@ export const navigation: NavItem[] = [
     children: [
       { title: 'Payroll Dashboard', href: '/payroll' },
       { title: 'Salary Structure', href: '/payroll/structures' },
+      { title: 'Salary Components', href: '/payroll/components' },
       { title: 'Payroll Batches', href: '/payroll/batches' },
-      { title: 'Payslip Preview', href: '/payroll/payslips' },
+      { title: 'Payslips', href: '/payroll/payslips' },
+      { title: 'Bonus Management', href: '/payroll/bonuses' },
+      { title: 'Overtime Management', href: '/payroll/overtime' },
+      { title: 'Late Deductions', href: '/payroll/late-deductions' },
+      { title: 'Payroll Payments', href: '/payroll/payments' },
+      { title: 'Payroll Reports', href: '/payroll/reports' },
+      { title: 'Payroll Settings', href: '/payroll/settings' },
     ],
   },
   {

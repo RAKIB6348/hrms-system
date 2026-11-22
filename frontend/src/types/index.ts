@@ -321,4 +321,6 @@ export interface Permission {
 }
 
 export * from './accounting'
+export * from './payroll'
+
 

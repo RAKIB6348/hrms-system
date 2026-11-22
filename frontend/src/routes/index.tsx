@@ -37,8 +37,15 @@ const LeaveCalendar = lazy(() => import('@/pages/leave/LeaveCalendar'))
 
 /* Payroll */
 const SalaryStructure = lazy(() => import('@/pages/payroll/SalaryStructure'))
+const SalaryComponents = lazy(() => import('@/pages/payroll/SalaryComponents'))
 const PayrollBatches = lazy(() => import('@/pages/payroll/PayrollBatches'))
 const PayslipPreview = lazy(() => import('@/pages/payroll/PayslipPreview'))
+const BonusManagement = lazy(() => import('@/pages/payroll/BonusManagement'))
+const OvertimeManagement = lazy(() => import('@/pages/payroll/OvertimeManagement'))
+const LateDeductions = lazy(() => import('@/pages/payroll/LateDeductions'))
+const PayrollPayments = lazy(() => import('@/pages/payroll/PayrollPayments'))
+const PayrollModuleReports = lazy(() => import('@/pages/payroll/PayrollReports'))
+const PayrollSettings = lazy(() => import('@/pages/payroll/PayrollSettings'))
 
 /* Accounting */
 const AccountingDashboard = lazy(() => import('@/pages/accounting/AccountingDashboard'))
@@ -110,8 +117,15 @@ export const router = createBrowserRouter([
 
       { path: 'payroll', element: <PayrollDashboard /> },
       { path: 'payroll/structures', element: <SalaryStructure /> },
+      { path: 'payroll/components', element: <SalaryComponents /> },
       { path: 'payroll/batches', element: <PayrollBatches /> },
       { path: 'payroll/payslips', element: <PayslipPreview /> },
+      { path: 'payroll/bonuses', element: <BonusManagement /> },
+      { path: 'payroll/overtime', element: <OvertimeManagement /> },
+      { path: 'payroll/late-deductions', element: <LateDeductions /> },
+      { path: 'payroll/payments', element: <PayrollPayments /> },
+      { path: 'payroll/reports', element: <PayrollModuleReports /> },
+      { path: 'payroll/settings', element: <PayrollSettings /> },
 
       { path: 'accounting', element: <AccountingDashboard /> },
       { path: 'accounting/chart-of-accounts', element: <ChartOfAccounts /> },
