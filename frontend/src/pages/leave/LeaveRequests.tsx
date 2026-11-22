@@ -51,8 +51,8 @@ export default function LeaveRequests() {
         toolbar={<span className="text-xs text-muted-foreground">{rows.filter((r) => r.status === 'Pending').length} pending</span>}
         rowActions={(r) => r.status === 'Pending' ? (
           <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" title="Approve" onClick={() => update(r.id, 'Approved')}><Check className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Reject" onClick={() => update(r.id, 'Rejected')}><X className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md bg-[#15803D] text-white transition-colors duration-150 hover:bg-[#166534]" title="Approve" onClick={() => update(r.id, 'Approved')}><Check className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md bg-[#B91C1C] text-white transition-colors duration-150 hover:bg-[#991B1B]" title="Reject" onClick={() => update(r.id, 'Rejected')}><X className="h-4 w-4" /></Button>
           </div>
         ) : undefined}
       />
