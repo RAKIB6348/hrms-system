@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Flag, Plus, CalendarDays } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DemoNotice } from '@/components/common/DemoNotice'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -41,7 +42,7 @@ export default function GoalsKpis() {
               <CardContent className="space-y-4 p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Flag className="h-4 w-4" /></div>
-                  <Badge variant={goal.status === 'Completed' ? 'success' : goal.status === 'On Track' ? 'info' : goal.status === 'At Risk' ? 'warning' : 'destructive'}>{goal.status}</Badge>
+                  <StatusBadge status={goal.status} />
                 </div>
                 <div className="space-y-1">
                   <p className="font-semibold leading-snug">{goal.title}</p>
