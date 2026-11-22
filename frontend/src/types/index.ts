@@ -148,6 +148,9 @@ export interface Shift {
 
 export interface LeaveRequest {
   id: ID
+  employeeId?: string
+  approverId?: string
+  session?: 'Full Day' | 'First Half' | 'Second Half'
   employee: string
   department: string
   leaveType: string
