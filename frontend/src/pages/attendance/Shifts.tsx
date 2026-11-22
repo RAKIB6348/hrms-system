@@ -1,156 +1,242 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { CalendarDays, Clock3, Eye, Pencil, Settings2, Trash2, Users } from 'lucide-react'
+import {
+  CalendarDays,
+  Clock3,
+  Eye,
+  Moon,
+  Pencil,
+  Settings2,
+  SlidersHorizontal,
+  Sun,
+  Trash2,
+  Users,
+} from 'lucide-react'
 import { CrudPage, type FormFieldDef } from '@/components/common/CrudPage'
 import { ActionIconButton } from '@/components/common/ActionIconButton'
-import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ShiftFormDialog, WEEK_DAYS, type ShiftFormSubmit } from '@/features/attendance/ShiftFormDialog'
-import { useShiftStore, newShiftId } from '@/hooks/use-shift-store'
-import { useEmployeeStore } from '@/hooks/use-employee-store'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { shifts } from '@/mocks/data'
 import type { Shift } from '@/types'
 
 const fields: FormFieldDef[] = [
-  { key: 'name', label: 'Shift Name', required: true, placeholder: 'e.g. Night Shift' },
-  { key: 'startTime', label: 'Start Time', type: 'text', required: true, placeholder: '09:00' },
-  { key: 'endTime', label: 'End Time', type: 'text', required: true, placeholder: '18:00' },
-  { key: 'days', label: 'Working Days', required: true, placeholder: 'Mon – Fri' },
-  { key: 'employees', label: 'Assigned Employees', type: 'number', required: true },
-  { key: 'flexibility', label: 'Flexibility', type: 'select', options: ['Fixed', 'Flexible ±1h', 'Flexible ±2h'], required: true },
+  {
+    key: 'name',
+    label: 'Shift Name',
+    required: true,
+    placeholder: 'e.g. Regular Day Shift, Night Shift',
+    colSpan: 2,
+    icon: Clock3,
+  },
+  {
+    key: 'startTime',
+    label: 'Start Time',
+    type: 'text',
+    required: true,
+    placeholder: '09:00',
+    colSpan: 1,
+    icon: Sun,
+    helperText: '24-hour format (e.g. 09:00)',
+  },
+  {
+    key: 'endTime',
+    label: 'End Time',
+    type: 'text',
+    required: true,
+    placeholder: '18:00',
+    colSpan: 1,
+    icon: Moon,
+    helperText: '24-hour format (e.g. 18:00)',
+  },
+  {
+    key: 'days',
+    label: 'Working Days',
+    required: true,
+    placeholder: 'e.g. Mon – Fri',
+    colSpan: 1,
+    icon: CalendarDays,
+  },
+  {
+    key: 'employees',
+    label: 'Assigned Employees',
+    type: 'number',
+    required: true,
+    placeholder: '0',
+    colSpan: 1,
+    icon: Users,
+  },
+  {
+    key: 'flexibility',
+    label: 'Flexibility Rule',
+    type: 'select',
+    options: ['Fixed', 'Flexible ±1h', 'Flexible ±2h'],
+    required: true,
+    colSpan: 2,
+    icon: SlidersHorizontal,
+  },
 ]
 
-function daysLabel(days: string[]) {
-  if (days.length === WEEK_DAYS.length) return 'All days'
-  if (days.length === 5 && WEEK_DAYS.slice(0, 5).every((day) => days.includes(day))) return 'Mon – Fri'
-  return days.join(', ')
-}
-
 export default function Shifts() {
-  const shifts = useShiftStore((state) => state.shifts)
-  const addShift = useShiftStore((state) => state.addShift)
-  const updateShift = useShiftStore((state) => state.updateShift)
-  const deleteShift = useShiftStore((state) => state.deleteShift)
-  const assignShift = useEmployeeStore((state) => state.assignShift)
-
   const [viewing, setViewing] = useState<Shift | null>(null)
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Shift | null>(null)
-  const [deleting, setDeleting] = useState<Shift | null>(null)
-
-  const saveShift = ({ values, employeeIdsChanged }: ShiftFormSubmit) => {
-    const assignedCount = employeeIdsChanged ? values.employeeIds.length : (editing?.employees ?? values.employeeIds.length)
-    const payload: Shift = {
-      ...(editing ?? { id: newShiftId() }),
-      name: values.name,
-      code: values.code,
-      startTime: values.startTime,
-      endTime: values.endTime,
-      breakDuration: Number(values.breakDuration || 0),
-      workingDays: values.workingDays,
-      days: daysLabel(values.workingDays),
-      flexibilityType: values.flexibilityType,
-      flexibility: values.flexibilityType === 'Flexible' ? 'Flexible ±1h' : 'Fixed',
-      gracePeriod: Number(values.gracePeriod || 0),
-      status: values.status,
-      earlyArrivalAllowance: Number(values.earlyArrivalAllowance || 0),
-      lateArrivalAllowance: Number(values.lateArrivalAllowance || 0),
-      employees: assignedCount,
-    }
-
-    if (editing) {
-      updateShift(editing.id, payload)
-      if (employeeIdsChanged) assignShift(values.name, values.employeeIds, editing.name)
-      toast.success('Shift updated successfully')
-    } else {
-      addShift(payload)
-      if (values.employeeIds.length) assignShift(values.name, values.employeeIds)
-      toast.success('Shift created successfully')
-    }
-    setFormOpen(false)
-    setEditing(null)
-  }
 
   return (
     <>
       <CrudPage
         title="Shift Management"
         description="Configure work shifts, timings and flexibility rules."
-        data={shifts} entityName="Shift" fields={fields} searchPlaceholder="Search shifts..."
-        disableBuiltInForm
-        onAdd={() => { setEditing(null); setFormOpen(true) }}
-        onEditClick={(shift) => { setEditing(shift); setFormOpen(true) }}
+        data={shifts}
+        entityName="Shift"
+        entityIcon={Clock3}
+        fields={fields}
+        searchPlaceholder="Search shifts..."
         actionsHeaderClassName="w-[132px] text-right"
         actionsHeaderLabel="Actions"
         onView={(shift) => setViewing(shift)}
-        renderRowActions={(shift) => {
+        renderRowActions={(shift, handlers) => {
           const hasEmployees = shift.employees > 0
           return (
             <div className="flex items-center justify-end gap-1.5">
-              <ActionIconButton variant="view" icon={Eye} label={`View ${shift.name}`} tooltip="View shift details" onClick={() => setViewing(shift)} />
-              <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${shift.name}`} tooltip="Edit shift" onClick={() => { setEditing(shift); setFormOpen(true) }} />
+              <ActionIconButton
+                variant="view"
+                icon={Eye}
+                label={`View ${shift.name}`}
+                tooltip="View shift details"
+                onClick={handlers.onView}
+              />
+              <ActionIconButton
+                variant="edit"
+                icon={Pencil}
+                label={`Edit ${shift.name}`}
+                tooltip="Edit shift"
+                onClick={handlers.onEdit}
+              />
               <ActionIconButton
                 variant="delete"
                 icon={Trash2}
                 label={`Delete ${shift.name}`}
-                tooltip={hasEmployees ? `Cannot delete: ${shift.employees} employees assigned` : 'Delete shift'}
+                tooltip={
+                  hasEmployees
+                    ? `Cannot delete: ${shift.employees} employees assigned`
+                    : 'Delete shift'
+                }
                 ariaDisabled={hasEmployees}
                 onClick={() => {
                   if (hasEmployees) {
-                    toast.warning(`${shift.name} has ${shift.employees} assigned employees — deletion is not allowed`)
+                    toast.warning(
+                      `${shift.name} has ${shift.employees} assigned employees — deletion is not allowed`,
+                    )
                     return
                   }
-                  setDeleting(shift)
+                  handlers.onDelete()
                 }}
               />
             </div>
           )
         }}
         columns={[
-          { key: 'name', header: 'Shift Name', cell: (s) => <span className="font-medium">{s.name}</span>, sortValue: (s) => s.name },
-          { key: 'timing', header: 'Timing', cell: (s) => `${s.startTime} – ${s.endTime}` },
+          {
+            key: 'name',
+            header: 'Shift Name',
+            cell: (s) => <span className="font-medium text-[#0F172A] dark:text-slate-100">{s.name}</span>,
+            sortValue: (s) => s.name,
+          },
+          {
+            key: 'timing',
+            header: 'Timing',
+            cell: (s) => (
+              <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {s.startTime} – {s.endTime}
+              </span>
+            ),
+          },
           { key: 'days', header: 'Days', cell: (s) => s.days },
-          { key: 'employees', header: 'Employees', cell: (s) => <Badge variant="secondary">{s.employees}</Badge>, sortValue: (s) => s.employees },
-          { key: 'flexibility', header: 'Flexibility', cell: (s) => <Badge variant="outline">{s.flexibility}</Badge> },
+          {
+            key: 'employees',
+            header: 'Employees',
+            cell: (s) => (
+              <Badge variant="secondary" className="font-semibold">
+                {s.employees}
+              </Badge>
+            ),
+            sortValue: (s) => s.employees,
+          },
+          {
+            key: 'flexibility',
+            header: 'Flexibility',
+            cell: (s) => <Badge variant="outline">{s.flexibility}</Badge>,
+          },
         ]}
-        toValues={(s: Shift) => ({ name: s.name, startTime: s.startTime, endTime: s.endTime, days: s.days, employees: String(s.employees), flexibility: s.flexibility })}
-        fromValues={(v, id): Shift => ({ id, name: v.name!, startTime: v.startTime!, endTime: v.endTime!, days: v.days!, employees: Number(v.employees), flexibility: v.flexibility! })}
+        toValues={(s: Shift) => ({
+          name: s.name,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          days: s.days,
+          employees: String(s.employees),
+          flexibility: s.flexibility,
+        })}
+        fromValues={(v, id): Shift => ({
+          id,
+          name: v.name!,
+          startTime: v.startTime!,
+          endTime: v.endTime!,
+          days: v.days!,
+          employees: Number(v.employees),
+          flexibility: v.flexibility!,
+        })}
       />
 
-      <ShiftFormDialog
-        key={editing?.id ?? 'new-shift'}
-        open={formOpen}
-        onOpenChange={(open) => { setFormOpen(open); if (!open) setEditing(null) }}
-        shift={editing}
-        onSubmit={saveShift}
-      />
-
-      <ConfirmDialog
-        open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}
-        title="Delete shift?"
-        description={`Remove "${deleting?.name ?? ''}" from the demo shift list?`}
-        confirmLabel="Delete"
-        onConfirm={() => { if (deleting) { deleteShift(deleting.id); toast.success('Shift deleted') } }}
-      />
-
+      {/* View Shift Modal */}
       <Dialog open={Boolean(viewing)} onOpenChange={(open) => !open && setViewing(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{viewing?.name}</DialogTitle>
-            <DialogDescription>Shift details · demonstration data</DialogDescription>
+        <DialogContent className="max-w-md rounded-2xl border border-[#E2E8F0] bg-white p-6 sm:p-7 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          <DialogHeader className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] ring-1 ring-indigo-500/10 dark:bg-indigo-950/50 dark:text-indigo-400">
+                <Clock3 className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-slate-100">
+                  {viewing?.name}
+                </DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+                  Shift schedule & flexibility rules
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
+
           {viewing && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Detail icon={Clock3} label="Start Time" value={viewing.startTime} />
-              <Detail icon={Clock3} label="End Time" value={viewing.endTime} />
+            <div className="grid gap-3 py-3 sm:grid-cols-2">
+              <Detail icon={Sun} label="Start Time" value={viewing.startTime} />
+              <Detail icon={Moon} label="End Time" value={viewing.endTime} />
               <Detail icon={CalendarDays} label="Working Days" value={viewing.days} />
               <Detail icon={Settings2} label="Flexibility" value={viewing.flexibility} />
-              <Detail icon={Users} label="Assigned Employees" value={`${viewing.employees}`} />
+              <div className="sm:col-span-2">
+                <Detail
+                  icon={Users}
+                  label="Assigned Employees"
+                  value={`${viewing.employees} active team members`}
+                />
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewing(null)}>Close</Button>
+
+          <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setViewing(null)}
+              className="h-[42px] px-5 rounded-lg text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -158,11 +244,26 @@ export default function Shifts() {
   )
 }
 
-function Detail({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string }) {
+function Detail({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users
+  label: string
+  value: string
+}) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border p-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="h-4 w-4" /></div>
-      <div className="min-w-0"><p className="text-xs text-muted-foreground">{label}</p><p className="truncate font-semibold">{value}</p></div>
+    <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-[#4F46E5] ring-1 ring-indigo-500/10 dark:bg-indigo-950/50 dark:text-indigo-400">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {label}
+        </p>
+        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+      </div>
     </div>
   )
 }

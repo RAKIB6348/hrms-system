@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { AlertCircle, MoreHorizontal, Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -21,6 +21,9 @@ export interface FormFieldDef {
   options?: string[]
   placeholder?: string
   required?: boolean
+  colSpan?: 1 | 2
+  icon?: any
+  helperText?: string
 }
 
 interface CrudPageProps<T extends { id: string }> {
@@ -35,9 +38,6 @@ interface CrudPageProps<T extends { id: string }> {
   toValues: (row: T) => Record<string, string>
   fromValues: (values: Record<string, string>, id: string) => T
   onAdd?: () => void
-  onEditClick?: (row: T) => void
-  /** Replaces the generic create/edit dialog with a page-provided form. */
-  disableBuiltInForm?: boolean
   onView?: (row: T) => void
   renderRowActions?: (row: T, handlers: {
     onView?: () => void
@@ -52,10 +52,9 @@ interface CrudPageProps<T extends { id: string }> {
 
 export function CrudPage<T extends { id: string }>({
   title, description, data, columns, filters = [], fields, entityName, entityIcon: EntityIcon, toValues, fromValues,
-  onAdd, onEditClick, disableBuiltInForm, onView, renderRowActions, actionsHeaderClassName, actionsHeaderLabel, searchPlaceholder, pageSize,
+  onAdd, onView, renderRowActions, actionsHeaderClassName, actionsHeaderLabel, searchPlaceholder, pageSize,
 }: CrudPageProps<T>) {
   const [rows, setRows] = useState<T[]>(data)
-  useEffect(() => { setRows(data) }, [data])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
@@ -64,7 +63,6 @@ export function CrudPage<T extends { id: string }>({
 
   const openCreate = () => {
     onAdd?.()
-    if (disableBuiltInForm) return
     setEditing(null)
     setValues(Object.fromEntries(fields.map((f) => [f.key, f.type === 'select' ? (f.options?.[0] ?? '') : ''])))
     setErrors({})
@@ -72,7 +70,6 @@ export function CrudPage<T extends { id: string }>({
   }
 
   const openEdit = (row: T) => {
-    if (disableBuiltInForm) { onEditClick?.(row); return }
     setEditing(row)
     setValues(toValues(row))
     setErrors({})
@@ -158,64 +155,111 @@ export function CrudPage<T extends { id: string }>({
           </DialogHeader>
 
           <div className="grid gap-4 py-3 sm:grid-cols-2">
-            {fields.map((field) => (
-              <div
-                key={field.key}
-                className={cn('space-y-1.5', field.type === 'textarea' ? 'sm:col-span-2' : '')}
-              >
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={field.key} className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    {field.label}
-                    {field.required && <span className="ml-1 text-rose-500 font-bold">*</span>}
-                  </Label>
+            {fields.map((field) => {
+              const FieldIcon = field.icon
+              const isColSpan2 = field.type === 'textarea' || field.colSpan === 2
+              return (
+                <div
+                  key={field.key}
+                  className={cn('space-y-1.5', isColSpan2 ? 'sm:col-span-2' : '')}
+                >
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={field.key} className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      {field.label}
+                      {field.required && <span className="ml-1 text-rose-500 font-bold">*</span>}
+                    </Label>
+                  </div>
+
+                  {field.type === 'select' ? (
+                    <div className="relative">
+                      {FieldIcon && (
+                        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3 text-slate-400 dark:text-slate-500">
+                          <FieldIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                      <Select
+                        value={values[field.key] ?? ''}
+                        onValueChange={(v) => {
+                          setValues((prev) => ({ ...prev, [field.key]: v }))
+                          if (errors[field.key]) setErrors((prev) => ({ ...prev, [field.key]: '' }))
+                        }}
+                      >
+                        <SelectTrigger
+                          id={field.key}
+                          className={cn(
+                            'h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-sm shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
+                            FieldIcon ? 'pl-9' : 'px-3.5',
+                          )}
+                        >
+                          <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map((o) => (
+                            <SelectItem key={o} value={o}>
+                              {o}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : field.type === 'textarea' ? (
+                    <div className="relative">
+                      {FieldIcon && (
+                        <div className="pointer-events-none absolute top-3 left-3 text-slate-400 dark:text-slate-500">
+                          <FieldIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                      <Textarea
+                        id={field.key}
+                        value={values[field.key] ?? ''}
+                        placeholder={field.placeholder}
+                        className={cn(
+                          'rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-3 text-sm leading-relaxed shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
+                          FieldIcon ? 'pl-9' : 'px-3.5',
+                        )}
+                        onChange={(e) => {
+                          setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                          if (errors[field.key]) setErrors((prev) => ({ ...prev, [field.key]: '' }))
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      {FieldIcon && (
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
+                          <FieldIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                      <Input
+                        id={field.key}
+                        type={field.type ?? 'text'}
+                        value={values[field.key] ?? ''}
+                        placeholder={field.placeholder}
+                        className={cn(
+                          'h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-sm shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
+                          FieldIcon ? 'pl-9' : 'px-3.5',
+                        )}
+                        onChange={(e) => {
+                          setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                          if (errors[field.key]) setErrors((prev) => ({ ...prev, [field.key]: '' }))
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {field.helperText && (
+                    <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">{field.helperText}</p>
+                  )}
+
+                  {errors[field.key] && (
+                    <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1 animate-fade-in">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {errors[field.key]}
+                    </p>
+                  )}
                 </div>
-
-                {field.type === 'select' ? (
-                  <Select
-                    value={values[field.key] ?? ''}
-                    onValueChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}
-                  >
-                    <SelectTrigger
-                      id={field.key}
-                      className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3.5 text-sm shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20"
-                    >
-                      <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {field.options?.map((o) => (
-                        <SelectItem key={o} value={o}>
-                          {o}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : field.type === 'textarea' ? (
-                  <Textarea
-                    id={field.key}
-                    value={values[field.key] ?? ''}
-                    placeholder={field.placeholder}
-                    className="rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-3 text-sm leading-relaxed shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20"
-                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  />
-                ) : (
-                  <Input
-                    id={field.key}
-                    type={field.type ?? 'text'}
-                    value={values[field.key] ?? ''}
-                    placeholder={field.placeholder}
-                    className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3.5 text-sm shadow-2xs transition-colors hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20"
-                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  />
-                )}
-
-                {errors[field.key] && (
-                  <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1 animate-fade-in">
-                    <AlertCircle className="h-3 w-3 shrink-0" />
-                    {errors[field.key]}
-                  </p>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5">
