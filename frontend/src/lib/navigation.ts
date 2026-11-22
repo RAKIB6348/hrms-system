@@ -1,6 +1,6 @@
 import {
   BarChart3, CalendarCheck, ClipboardList, FileBarChart, LayoutDashboard,
-  Settings, ShieldCheck, Users, WalletCards, Wallet, type LucideIcon,
+  Settings, ShieldCheck, Users, WalletCards, Wallet, Landmark, type LucideIcon,
 } from 'lucide-react'
 
 export interface NavChild {
@@ -61,6 +61,22 @@ export const navigation: NavItem[] = [
       { title: 'Salary Structure', href: '/payroll/structures' },
       { title: 'Payroll Batches', href: '/payroll/batches' },
       { title: 'Payslip Preview', href: '/payroll/payslips' },
+    ],
+  },
+  {
+    title: 'Accounting', href: '/accounting', icon: Landmark,
+    children: [
+      { title: 'Accounting Dashboard', href: '/accounting' },
+      { title: 'Chart of Accounts', href: '/accounting/chart-of-accounts' },
+      { title: 'Journal Entries', href: '/accounting/journal-entries' },
+      { title: 'General Ledger', href: '/accounting/general-ledger' },
+      { title: 'Trial Balance', href: '/accounting/trial-balance' },
+      { title: 'Cash & Bank Management', href: '/accounting/cash-bank' },
+      { title: 'Expense Management', href: '/accounting/expenses' },
+      { title: 'Payroll Accounting', href: '/accounting/payroll-accounting' },
+      { title: 'Payments & Transactions', href: '/accounting/transactions' },
+      { title: 'Financial Reports', href: '/accounting/financial-reports' },
+      { title: 'Accounting Settings', href: '/accounting/settings' },
     ],
   },
   {

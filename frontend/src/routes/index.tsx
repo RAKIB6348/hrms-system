@@ -40,6 +40,20 @@ const SalaryStructure = lazy(() => import('@/pages/payroll/SalaryStructure'))
 const PayrollBatches = lazy(() => import('@/pages/payroll/PayrollBatches'))
 const PayslipPreview = lazy(() => import('@/pages/payroll/PayslipPreview'))
 
+/* Accounting */
+const AccountingDashboard = lazy(() => import('@/pages/accounting/AccountingDashboard'))
+const ChartOfAccounts = lazy(() => import('@/pages/accounting/ChartOfAccounts'))
+const JournalEntries = lazy(() => import('@/pages/accounting/JournalEntries'))
+const GeneralLedger = lazy(() => import('@/pages/accounting/GeneralLedger'))
+const TrialBalance = lazy(() => import('@/pages/accounting/TrialBalance'))
+const CashBankManagement = lazy(() => import('@/pages/accounting/CashBankManagement'))
+const ExpenseManagement = lazy(() => import('@/pages/accounting/ExpenseManagement'))
+const PayrollAccounting = lazy(() => import('@/pages/accounting/PayrollAccounting'))
+const PaymentsTransactions = lazy(() => import('@/pages/accounting/PaymentsTransactions'))
+const FinancialReports = lazy(() => import('@/pages/accounting/FinancialReports'))
+const AccountingSettings = lazy(() => import('@/pages/accounting/AccountingSettings'))
+
+
 /* Performance */
 const EmployeeReviews = lazy(() => import('@/pages/performance/EmployeeReviews'))
 const GoalsKpis = lazy(() => import('@/pages/performance/GoalsKpis'))
@@ -98,6 +112,18 @@ export const router = createBrowserRouter([
       { path: 'payroll/structures', element: <SalaryStructure /> },
       { path: 'payroll/batches', element: <PayrollBatches /> },
       { path: 'payroll/payslips', element: <PayslipPreview /> },
+
+      { path: 'accounting', element: <AccountingDashboard /> },
+      { path: 'accounting/chart-of-accounts', element: <ChartOfAccounts /> },
+      { path: 'accounting/journal-entries', element: <JournalEntries /> },
+      { path: 'accounting/general-ledger', element: <GeneralLedger /> },
+      { path: 'accounting/trial-balance', element: <TrialBalance /> },
+      { path: 'accounting/cash-bank', element: <CashBankManagement /> },
+      { path: 'accounting/expenses', element: <ExpenseManagement /> },
+      { path: 'accounting/payroll-accounting', element: <PayrollAccounting /> },
+      { path: 'accounting/transactions', element: <PaymentsTransactions /> },
+      { path: 'accounting/financial-reports', element: <FinancialReports /> },
+      { path: 'accounting/settings', element: <AccountingSettings /> },
 
       { path: 'performance', element: <PerformanceDashboard /> },
       { path: 'performance/reviews', element: <EmployeeReviews /> },
