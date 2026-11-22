@@ -158,6 +158,7 @@ export interface LeaveRequest {
   endDate: string
   days: number
   reason: string
+  description?: string
   status: LeaveStatus
   appliedOn: string
   approver: string

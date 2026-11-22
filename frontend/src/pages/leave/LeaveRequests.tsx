@@ -92,6 +92,19 @@ const columns: Column<LeaveRequest>[] = [
     cell: (r) => formatDate(r.appliedOn, { month: 'short', day: 'numeric' }),
     sortValue: (r) => r.appliedOn,
   },
+  {
+    key: 'description',
+    header: 'Description',
+    cell: (r) => (
+      <span
+        className="line-clamp-1 max-w-[220px] text-xs text-muted-foreground"
+        title={r.description || r.reason}
+      >
+        {r.description || r.reason || '—'}
+      </span>
+    ),
+    sortValue: (r) => r.description || r.reason || '',
+  },
   { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.status} /> },
 ]
 

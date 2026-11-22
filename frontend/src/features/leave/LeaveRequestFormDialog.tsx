@@ -124,6 +124,7 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
       endDate: toDate,
       days: duration,
       reason: reason.trim(),
+      description: reason.trim(),
       status: 'Pending',
       appliedOn: new Date().toISOString().split('T')[0]!,
       approver: employee?.manager || 'Department Head',
