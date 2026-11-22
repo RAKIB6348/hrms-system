@@ -34,22 +34,90 @@ interface DataTableProps<T> {
   rowActions?: (row: T) => ReactNode
   emptyTitle?: string
   toolbar?: ReactNode
+  /** Optional controlled state, used when a page needs to share search/filters across views. */
+  search?: string
+  onSearchChange?: (value: string) => void
+  filterValues?: Record<string, string>
+  onFilterValuesChange?: (values: Record<string, string>) => void
+}
+
+export interface DataTableToolbarProps<T> {
+  filters: TableFilter<T>[]
+  search: string
+  onSearchChange: (value: string) => void
+  filterValues: Record<string, string>
+  onFilterChange: (key: string, value: string) => void
+  searchPlaceholder?: string
+  toolbar?: ReactNode
+}
+
+/** Search + filter controls shared by the table and alternate views. */
+export function DataTableToolbar<T>({
+  filters, search, onSearchChange, filterValues, onFilterChange,
+  searchPlaceholder = 'Search records...', toolbar,
+}: DataTableToolbarProps<T>) {
+  return (
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-1 flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder={searchPlaceholder} className="pl-9" />
+        </div>
+        {filters.map((filter) => (
+          <Select
+            key={filter.key}
+            value={filterValues[filter.key] ?? 'all'}
+            onValueChange={(value) => onFilterChange(filter.key, value)}
+          >
+            <SelectTrigger className="w-full sm:w-40" aria-label={filter.label}>
+              <span className="flex items-center gap-1.5 truncate">
+                <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <SelectValue placeholder={filter.label} />
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All {filter.label.toLowerCase()}</SelectItem>
+              {filter.options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        ))}
+      </div>
+      {toolbar && <div className="flex items-center gap-2">{toolbar}</div>}
+    </div>
+  )
 }
 
 export function DataTable<T extends object>({
   data, columns, filters = [], searchPlaceholder = 'Search records...', pageSize = 8,
   loading, onRowClick, rowActions, emptyTitle = 'No records found', toolbar,
+  search, onSearchChange, filterValues: controlledFilterValues, onFilterValuesChange,
 }: DataTableProps<T>) {
-  const [query, setQuery] = useState('')
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+  const [internalQuery, setInternalQuery] = useState('')
+  const [internalFilterValues, setInternalFilterValues] = useState<Record<string, string>>({})
   const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null)
   const [page, setPage] = useState(1)
+
+  const query = search ?? internalQuery
+  const activeFilterValues = controlledFilterValues ?? internalFilterValues
+
+  const handleSearchChange = (value: string) => {
+    if (onSearchChange) onSearchChange(value)
+    else setInternalQuery(value)
+    setPage(1)
+  }
+
+  const handleFilterChange = (key: string, value: string) => {
+    const next = { ...activeFilterValues, [key]: value }
+    if (onFilterValuesChange) onFilterValuesChange(next)
+    else setInternalFilterValues(next)
+    setPage(1)
+  }
 
   const filtered = useMemo(() => {
     let result = data.filter((row) => {
       const matchesQuery = query.trim() === '' || JSON.stringify(row).toLowerCase().includes(query.trim().toLowerCase())
       const matchesFilters = filters.every((f) => {
-        const selected = filterValues[f.key]
+        const selected = activeFilterValues[f.key]
         return !selected || selected === 'all' || f.value(row) === selected
       })
       return matchesQuery && matchesFilters
@@ -68,7 +136,7 @@ export function DataTable<T extends object>({
       }
     }
     return result
-  }, [data, query, filterValues, filters, sort, columns])
+  }, [data, query, activeFilterValues, filters, sort, columns])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const currentPage = Math.min(page, totalPages)
@@ -87,40 +155,15 @@ export function DataTable<T extends object>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative w-full sm:w-64">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setPage(1) }}
-              placeholder={searchPlaceholder}
-              className="pl-9"
-            />
-          </div>
-          {filters.map((filter) => (
-            <Select
-              key={filter.key}
-              value={filterValues[filter.key] ?? 'all'}
-              onValueChange={(value) => { setFilterValues((prev) => ({ ...prev, [filter.key]: value })); setPage(1) }}
-            >
-              <SelectTrigger className="w-full sm:w-40" aria-label={filter.label}>
-                <span className="flex items-center gap-1.5 truncate">
-                  <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <SelectValue placeholder={filter.label} />
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All {filter.label.toLowerCase()}</SelectItem>
-                {filter.options.map((option) => (
-                  <SelectItem key={option} value={option}>{option}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ))}
-        </div>
-        {toolbar && <div className="flex items-center gap-2">{toolbar}</div>}
-      </div>
+      <DataTableToolbar
+        filters={filters}
+        search={query}
+        onSearchChange={handleSearchChange}
+        filterValues={activeFilterValues}
+        onFilterChange={handleFilterChange}
+        searchPlaceholder={searchPlaceholder}
+        toolbar={toolbar}
+      />
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <Table>
