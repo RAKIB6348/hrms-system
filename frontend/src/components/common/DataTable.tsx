@@ -58,10 +58,15 @@ export function DataTableToolbar<T>({
 }: DataTableToolbarProps<T>) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex flex-1 flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-64">
+      <div className="flex flex-1 flex-wrap items-center gap-2.5">
+        <div className="relative w-full sm:w-72 md:w-80">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => onSearchChange(e.target.value)} placeholder={searchPlaceholder} className="pl-9" />
+          <Input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="h-9 rounded-lg pl-9 text-sm"
+          />
         </div>
         {filters.map((filter) => (
           <Select
@@ -69,11 +74,11 @@ export function DataTableToolbar<T>({
             value={filterValues[filter.key] ?? 'all'}
             onValueChange={(value) => onFilterChange(filter.key, value)}
           >
-            <SelectTrigger className="w-full sm:w-40" aria-label={filter.label}>
-              <span className="flex items-center gap-1.5 truncate">
+            <SelectTrigger className="h-9 w-full sm:w-44 rounded-lg text-sm" aria-label={filter.label}>
+              <div className="flex items-center gap-2 truncate">
                 <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <SelectValue placeholder={filter.label} />
-              </span>
+              </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All {filter.label.toLowerCase()}</SelectItem>
