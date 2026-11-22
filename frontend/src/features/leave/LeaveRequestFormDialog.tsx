@@ -1,9 +1,23 @@
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertCircle, Calendar, CalendarPlus, ChevronDown } from 'lucide-react'
+import {
+  AlertCircle,
+  Calendar,
+  CalendarPlus,
+  Check,
+  ChevronDown,
+  Search,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Dialog,
   DialogContent,
@@ -21,6 +35,7 @@ import {
 import { useEmployeeStore } from '@/hooks/use-employee-store'
 import { newLeaveRequestId, useLeaveStore } from '@/hooks/use-leave-store'
 import { leaveTypes } from '@/mocks/data'
+import { cn, formatDate, initials } from '@/lib/utils'
 import type { LeaveRequest } from '@/types'
 
 function calculateDays(start: string, end: string): number {
@@ -42,11 +57,17 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
   const addRequest = useLeaveStore((state) => state.addRequest)
 
   const [employeeId, setEmployeeId] = useState('')
+  const [employeeOpen, setEmployeeOpen] = useState(false)
+  const [employeeSearch, setEmployeeSearch] = useState('')
+
   const [leaveTypeName, setLeaveTypeName] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [reason, setReason] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const fromDateRef = useRef<HTMLInputElement>(null)
+  const toDateRef = useRef<HTMLInputElement>(null)
 
   const employee = employees.find((item) => item.id === employeeId)
   const selectedLeaveType = leaveTypes.find((item) => item.name === leaveTypeName)
@@ -56,7 +77,25 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
   const requestedDays = fromDate && toDate ? calculateDays(fromDate, toDate) : 0
   const remainingDays = Math.max(0, availableDays - requestedDays)
 
+  const filteredEmployees = useMemo(() => {
+    const term = employeeSearch.trim().toLowerCase()
+    if (!term) return employees
+    return employees.filter((emp) =>
+      `${emp.firstName} ${emp.lastName} ${emp.employeeId} ${emp.department}`.toLowerCase().includes(term),
+    )
+  }, [employees, employeeSearch])
+
   const clearError = (key: string) => setErrors((prev) => ({ ...prev, [key]: '' }))
+
+  const openDatePicker = (ref: React.RefObject<HTMLInputElement>) => {
+    if (ref.current) {
+      try {
+        ref.current.showPicker()
+      } catch {
+        ref.current.focus()
+      }
+    }
+  }
 
   const submit = () => {
     const next: Record<string, string> = {}
@@ -123,35 +162,99 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
         >
           {/* Row 1: Employee & Leave Type */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Employee */}
+            {/* Searchable Employee Combobox */}
             <div className="space-y-1.5">
               <Label htmlFor="employee" className="text-xs font-medium text-slate-700 dark:text-slate-200">
                 Employee <span className="text-rose-500">*</span>
               </Label>
-              <Select
-                value={employeeId}
-                onValueChange={(val) => {
-                  setEmployeeId(val)
-                  clearError('employee')
+              <Popover
+                open={employeeOpen}
+                onOpenChange={(nextOpen) => {
+                  setEmployeeOpen(nextOpen)
+                  if (!nextOpen) setEmployeeSearch('')
                 }}
               >
-                <SelectTrigger
-                  id="employee"
-                  className="h-[44px] rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-sm text-slate-900 dark:text-slate-100 shadow-2xs hover:border-slate-300 focus-visible:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/20"
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employeeOpen}
+                    className={cn(
+                      'h-[44px] w-full justify-between rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-left text-sm font-normal shadow-2xs hover:border-slate-300 focus-visible:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/20',
+                      !employee && 'text-slate-400',
+                    )}
+                  >
+                    <span className="truncate">
+                      {employee ? `${employee.firstName} ${employee.lastName}` : 'Select employee'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-[320px] sm:w-[350px] p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
                 >
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {employees.map((emp) => {
-                    const fullName = `${emp.firstName} ${emp.lastName}`
-                    return (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {fullName}
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
+                  <div className="relative mb-2">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      autoFocus
+                      value={employeeSearch}
+                      onChange={(e) => setEmployeeSearch(e.target.value)}
+                      placeholder="Search employee by name or ID..."
+                      className="h-[38px] pl-9 rounded-lg border-slate-200 dark:border-slate-700 text-xs"
+                    />
+                  </div>
+                  <div className="scrollbar-thin max-h-56 overflow-y-auto space-y-0.5">
+                    {filteredEmployees.length === 0 ? (
+                      <p className="px-3 py-4 text-center text-xs text-slate-500">
+                        No employees found matching &quot;{employeeSearch}&quot;
+                      </p>
+                    ) : (
+                      filteredEmployees.map((emp) => {
+                        const fullName = `${emp.firstName} ${emp.lastName}`
+                        const isSelected = emp.id === employeeId
+                        return (
+                          <button
+                            key={emp.id}
+                            type="button"
+                            onClick={() => {
+                              setEmployeeId(emp.id)
+                              setEmployeeOpen(false)
+                              setEmployeeSearch('')
+                              clearError('employee')
+                            }}
+                            className={cn(
+                              'flex w-full items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition-colors hover:bg-slate-100 dark:hover:bg-slate-800',
+                              isSelected && 'bg-slate-100 dark:bg-slate-800 font-semibold',
+                            )}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Avatar className="h-7 w-7 shrink-0">
+                                <AvatarFallback
+                                  style={{ backgroundColor: emp.avatarColor, color: '#fff' }}
+                                  className="text-[10px] font-bold"
+                                >
+                                  {initials(fullName)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 truncate">
+                                <p className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
+                                  {fullName}
+                                </p>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  {emp.designation} · {emp.department}
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && <Check className="h-4 w-4 text-[#4F46E5] shrink-0" />}
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
               {errors.employee && (
                 <p className="text-xs font-medium text-rose-600 flex items-center gap-1 mt-1">
                   <AlertCircle className="h-3 w-3" /> {errors.employee}
@@ -173,7 +276,10 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
               >
                 <SelectTrigger
                   id="leaveType"
-                  className="h-[44px] rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-sm text-slate-900 dark:text-slate-100 shadow-2xs hover:border-slate-300 focus-visible:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/20"
+                  className={cn(
+                    'h-[44px] rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-sm shadow-2xs hover:border-slate-300 focus-visible:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/20',
+                    !leaveTypeName && 'text-slate-400',
+                  )}
                 >
                   <SelectValue placeholder="Select leave type" />
                 </SelectTrigger>
@@ -232,14 +338,28 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
               Leave Schedule
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* From Date */}
+              {/* From Date - Custom trigger button with hidden native picker to avoid mm/dd/yyyy overlap */}
               <div className="space-y-1.5">
                 <Label htmlFor="fromDate" className="text-xs font-medium text-slate-700 dark:text-slate-200">
                   From Date <span className="text-rose-500">*</span>
                 </Label>
-                <div className="relative flex items-center">
-                  <Calendar className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => openDatePicker(fromDateRef)}
+                  className="relative flex items-center h-[44px] w-full px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 transition-all text-left"
+                >
+                  <Calendar className="h-4 w-4 text-slate-400 mr-2.5 shrink-0" />
+                  <span
+                    className={cn(
+                      'text-sm flex-1 truncate',
+                      fromDate ? 'text-slate-900 dark:text-slate-100 font-normal' : 'text-slate-400',
+                    )}
+                  >
+                    {fromDate ? formatDate(fromDate, { month: 'numeric', day: 'numeric', year: 'numeric' }) : 'Start date'}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
                   <input
+                    ref={fromDateRef}
                     id="fromDate"
                     type="date"
                     value={fromDate}
@@ -248,15 +368,10 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
                       if (toDate && e.target.value > toDate) setToDate(e.target.value)
                       clearError('fromDate')
                     }}
-                    className="w-full h-[44px] pl-10 pr-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="sr-only pointer-events-none"
+                    tabIndex={-1}
                   />
-                  {!fromDate && (
-                    <span className="pointer-events-none absolute left-10 text-sm text-slate-400">
-                      Start date
-                    </span>
-                  )}
-                  <ChevronDown className="pointer-events-none absolute right-3.5 h-4 w-4 text-slate-400" />
-                </div>
+                </button>
                 {errors.fromDate && (
                   <p className="text-xs font-medium text-rose-600 flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3" /> {errors.fromDate}
@@ -269,9 +384,23 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
                 <Label htmlFor="toDate" className="text-xs font-medium text-slate-700 dark:text-slate-200">
                   To Date <span className="text-rose-500">*</span>
                 </Label>
-                <div className="relative flex items-center">
-                  <Calendar className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400" />
+                <button
+                  type="button"
+                  onClick={() => openDatePicker(toDateRef)}
+                  className="relative flex items-center h-[44px] w-full px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 transition-all text-left"
+                >
+                  <Calendar className="h-4 w-4 text-slate-400 mr-2.5 shrink-0" />
+                  <span
+                    className={cn(
+                      'text-sm flex-1 truncate',
+                      toDate ? 'text-slate-900 dark:text-slate-100 font-normal' : 'text-slate-400',
+                    )}
+                  >
+                    {toDate ? formatDate(toDate, { month: 'numeric', day: 'numeric', year: 'numeric' }) : 'End date'}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
                   <input
+                    ref={toDateRef}
                     id="toDate"
                     type="date"
                     min={fromDate}
@@ -280,15 +409,10 @@ export function LeaveRequestFormDialog({ open, onOpenChange }: LeaveRequestFormD
                       setToDate(e.target.value)
                       clearError('toDate')
                     }}
-                    className="w-full h-[44px] pl-10 pr-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="sr-only pointer-events-none"
+                    tabIndex={-1}
                   />
-                  {!toDate && (
-                    <span className="pointer-events-none absolute left-10 text-sm text-slate-400">
-                      End date
-                    </span>
-                  )}
-                  <ChevronDown className="pointer-events-none absolute right-3.5 h-4 w-4 text-slate-400" />
-                </div>
+                </button>
                 {errors.toDate && (
                   <p className="text-xs font-medium text-rose-600 flex items-center gap-1 mt-1">
                     <AlertCircle className="h-3 w-3" /> {errors.toDate}
