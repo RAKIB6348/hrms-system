@@ -8,7 +8,7 @@ export type ActionVariant = 'view' | 'edit' | 'delete'
 const variantStyles: Record<ActionVariant, string> = {
   view: 'bg-[#1E40AF] text-white hover:bg-[#1D4ED8]',
   edit: 'bg-[#6D28D9] text-white hover:bg-[#7C3AED]',
-  delete: 'bg-[#B91C1C] text-white hover:bg-[#DC2626]',
+  delete: 'bg-[#B91C1C] text-white hover:bg-[#991B1B]',
 }
 
 interface ActionIconButtonProps {
@@ -39,7 +39,6 @@ export function ActionIconButton({
             'h-8 w-8 rounded-md transition-colors duration-150',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             variantStyles[variant],
-            ariaDisabled && 'opacity-40',
             className,
           )}
         >
