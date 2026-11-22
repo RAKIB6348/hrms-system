@@ -94,7 +94,8 @@ export const employees: Employee[] = Array.from({ length: 24 }, (_, i) => {
   const dept = departments[i % departments.length]!
   const first = firstNames[i]!
   const last = lastNames[i]!
-  const statuses: Employee['status'] = i === 5 || i === 17 ? 'On Leave' : i === 21 ? 'Probation' : i === 23 ? 'Inactive' : 'Active'
+  const isMeera = first === 'Meera' && last === 'Nair'
+  const statuses: Employee['status'] = isMeera ? 'Active' : (i === 5 || i === 17 ? 'On Leave' : i === 21 ? 'Probation' : i === 23 ? 'Inactive' : 'Active')
   return {
     id: `emp-${i + 1}`,
     employeeId: `PF-${String(1001 + i)}`,
@@ -102,18 +103,18 @@ export const employees: Employee[] = Array.from({ length: 24 }, (_, i) => {
     lastName: last,
     email: `${first.toLowerCase()}.${last.toLowerCase()}@peopleflow.io`,
     phone: `+1 (555) ${String(210 + i * 7).slice(0, 3)}-${String(1000 + i * 37).slice(0, 4)}`,
-    department: dept.name,
-    designation: designationByDept[dept.name] ?? 'Specialist',
+    department: isMeera ? 'Human Resources' : dept.name,
+    designation: isMeera ? 'HR Administrator' : (designationByDept[dept.name] ?? 'Specialist'),
     status: statuses,
-    joinDate: `20${18 + (i % 7)}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 27)).padStart(2, '0')}`,
-    location: locations[i % locations.length]!,
-    manager: departments[(i + 1) % departments.length]!.head,
-    salary: 62000 + ((i * 7900) % 88000),
+    joinDate: isMeera ? '2023-06-01' : `20${18 + (i % 7)}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 27)).padStart(2, '0')}`,
+    location: isMeera ? 'New York' : locations[i % locations.length]!,
+    manager: isMeera ? 'Vikram Rao' : departments[(i + 1) % departments.length]!.head,
+    salary: isMeera ? 95000 : 62000 + ((i * 7900) % 88000),
     avatarColor: avatarColors[i % avatarColors.length]!,
     dob: `19${85 + (i % 15)}-${String(1 + ((i * 3) % 12)).padStart(2, '0')}-${String(1 + ((i * 5) % 27)).padStart(2, '0')}`,
     gender: i % 3 === 0 ? 'Female' : i % 3 === 1 ? 'Male' : 'Other',
-    address: `${100 + i * 7} Market Street, ${locations[i % locations.length]}`,
-    employmentType: employmentTypes[i % employmentTypes.length]!,
+    address: `${100 + i * 7} Market Street, ${isMeera ? 'New York' : locations[i % locations.length]}`,
+    employmentType: isMeera ? 'Full-time' : employmentTypes[i % employmentTypes.length]!,
   }
 })
 
