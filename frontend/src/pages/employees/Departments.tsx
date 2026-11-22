@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Eye, Pencil, Trash2, UserRound, Users, Wallet } from 'lucide-react'
 import { CrudPage, type FormFieldDef } from '@/components/common/CrudPage'
+import { ActionIconButton } from '@/components/common/ActionIconButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { departments, employees } from '@/mocks/data'
 import { formatCurrency, initials } from '@/lib/utils'
 import type { Department } from '@/types'
@@ -38,52 +38,23 @@ export default function Departments() {
         renderRowActions={(department, handlers) => {
           const hasEmployees = department.employees > 0
           return (
-            <div className="flex items-center justify-end gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
-                    aria-label={`View ${department.name}`}
-                    onClick={handlers.onView}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>View department details</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 text-violet-600 hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-                    aria-label={`Edit ${department.name}`}
-                    onClick={handlers.onEdit}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Edit department</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="icon" className={`h-8 w-8 text-destructive hover:bg-destructive/10 ${hasEmployees ? 'opacity-40' : ''}`}
-                    aria-label={`Delete ${department.name}`}
-                    aria-disabled={hasEmployees}
-                    onClick={() => {
-                      if (hasEmployees) {
-                        toast.info(`${department.name} has ${department.employees} employees assigned — delete is unavailable`)
-                        return
-                      }
-                      handlers.onDelete()
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasEmployees ? `Cannot delete: ${department.employees} employees assigned` : 'Delete department'}
-                </TooltipContent>
-              </Tooltip>
+            <div className="flex items-center justify-end gap-1.5">
+              <ActionIconButton variant="view" icon={Eye} label={`View ${department.name}`} tooltip="View department details" onClick={handlers.onView} />
+              <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${department.name}`} tooltip="Edit department" onClick={handlers.onEdit} />
+              <ActionIconButton
+                variant="delete"
+                icon={Trash2}
+                label={`Delete ${department.name}`}
+                tooltip={hasEmployees ? `Cannot delete: ${department.employees} employees assigned` : 'Delete department'}
+                ariaDisabled={hasEmployees}
+                onClick={() => {
+                  if (hasEmployees) {
+                    toast.info(`${department.name} has ${department.employees} employees assigned — delete is unavailable`)
+                    return
+                  }
+                  handlers.onDelete()
+                }}
+              />
             </div>
           )
         }}

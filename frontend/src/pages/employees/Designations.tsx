@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { BriefcaseBusiness, Eye, Layers, Pencil, Trash2, Users } from 'lucide-react'
 import { CrudPage, type FormFieldDef } from '@/components/common/CrudPage'
+import { ActionIconButton } from '@/components/common/ActionIconButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { designations, departments, employees } from '@/mocks/data'
 import { initials } from '@/lib/utils'
 import type { Designation } from '@/types'
@@ -35,43 +35,10 @@ export default function Designations() {
         actionsHeaderLabel="Actions"
         onView={(designation) => setViewing(designation)}
         renderRowActions={(designation, handlers) => (
-          <div className="flex items-center justify-end gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
-                  aria-label={`View ${designation.title}`}
-                  onClick={handlers.onView}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View designation details</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 text-violet-600 hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-                  aria-label={`Edit ${designation.title}`}
-                  onClick={handlers.onEdit}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit designation</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                  aria-label={`Delete ${designation.title}`}
-                  onClick={handlers.onDelete}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete designation</TooltipContent>
-            </Tooltip>
+          <div className="flex items-center justify-end gap-1.5">
+            <ActionIconButton variant="view" icon={Eye} label={`View ${designation.title}`} tooltip="View designation details" onClick={handlers.onView} />
+            <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${designation.title}`} tooltip="Edit designation" onClick={handlers.onEdit} />
+            <ActionIconButton variant="delete" icon={Trash2} label={`Delete ${designation.title}`} tooltip="Delete designation" onClick={handlers.onDelete} />
           </div>
         )}
         columns={[

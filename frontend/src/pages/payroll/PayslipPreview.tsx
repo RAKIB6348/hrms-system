@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { DemoNotice } from '@/components/common/DemoNotice'
 import { DataTable, type Column, type TableFilter } from '@/components/common/DataTable'
 import { EmptyState } from '@/components/common/EmptyState'
+import { ActionIconButton } from '@/components/common/ActionIconButton'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -118,9 +119,9 @@ export default function PayslipPreview() {
             onRowClick={(row) => openDetails(row.id)}
             emptyTitle="No payslip records yet"
             rowActions={(row) => (
-              <Button variant="ghost" size="icon" className="h-8 w-8" title="Open payslip details" onClick={(e) => { e.stopPropagation(); openDetails(row.id) }}>
-                <Eye className="h-4 w-4" />
-              </Button>
+              <div onClick={(event) => event.stopPropagation()}>
+                <ActionIconButton variant="view" icon={Eye} label={`View ${row.employee} payslip`} tooltip="Open payslip details" onClick={() => openDetails(row.id)} />
+              </div>
             )}
             toolbar={<span className="text-xs text-muted-foreground">{records.length} record{records.length === 1 ? '' : 's'} · demo data</span>}
           />

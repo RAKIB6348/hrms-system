@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { ActionIconButton } from '@/components/common/ActionIconButton'
 import { EmployeeForm } from '@/features/employees/EmployeeForm'
 import { employees, departments } from '@/mocks/data'
 import { formatCurrency, initials } from '@/lib/utils'
@@ -74,43 +74,10 @@ export default function EmployeeList() {
         rowActions={(emp) => {
           const name = `${emp.firstName} ${emp.lastName}`
           return (
-            <div className="flex items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
-                    aria-label={`View ${name}`}
-                    onClick={() => navigate(`/employees/${emp.id}`)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>View profile</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 text-violet-600 hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-                    aria-label={`Edit ${name}`}
-                    onClick={() => setEditing(emp)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Edit employee</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                    aria-label={`Delete ${name}`}
-                    onClick={() => setDeleting(emp)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete employee</TooltipContent>
-              </Tooltip>
+            <div className="flex items-center justify-end gap-1.5" onClick={(event) => event.stopPropagation()}>
+              <ActionIconButton variant="view" icon={Eye} label={`View ${name}`} tooltip="View profile" onClick={() => navigate(`/employees/${emp.id}`)} />
+              <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${name}`} tooltip="Edit employee" onClick={() => setEditing(emp)} />
+              <ActionIconButton variant="delete" icon={Trash2} label={`Delete ${name}`} tooltip="Delete employee" onClick={() => setDeleting(emp)} />
             </div>
           )
         }}
