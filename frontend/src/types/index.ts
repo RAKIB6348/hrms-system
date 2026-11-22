@@ -21,6 +21,8 @@ export interface Employee {
   joinDate: string
   location: string
   manager: string
+  /** Unique ID of the selected reporting manager, when one is assigned. */
+  managerId?: string
   salary: number
   avatarColor: string
   dob: string

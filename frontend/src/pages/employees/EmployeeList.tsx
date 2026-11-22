@@ -203,6 +203,7 @@ export default function EmployeeList() {
           {editing && (
             <EmployeeForm
               submitLabel="Save Changes"
+              excludeEmployeeId={editing.id}
               defaultValues={{
                 firstName: editing.firstName,
                 lastName: editing.lastName,
@@ -215,6 +216,7 @@ export default function EmployeeList() {
                 location: editing.location,
                 salary: String(editing.salary),
                 manager: editing.manager,
+                managerId: editing.managerId ?? '',
                 address: editing.address,
               }}
               onCancel={() => setEditing(null)}

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ManagerSelect } from '@/features/employees/ManagerSelect'
 import { departments, designations } from '@/mocks/data'
 
 export const employeeFormSchema = z.object({
@@ -23,6 +24,7 @@ export const employeeFormSchema = z.object({
   location: z.string().min(1, 'Enter a work location'),
   salary: z.string().min(1, 'Enter an annual salary'),
   manager: z.string().optional(),
+  managerId: z.string().optional(),
   address: z.string().optional(),
 })
 
@@ -30,7 +32,7 @@ export type EmployeeFormValues = z.infer<typeof employeeFormSchema>
 
 const emptyValues: EmployeeFormValues = {
   firstName: '', lastName: '', email: '', phone: '', department: '', designation: '',
-  employmentType: 'Full-time', joinDate: '', location: '', salary: '', manager: '', address: '',
+  employmentType: 'Full-time', joinDate: '', location: '', salary: '', manager: '', managerId: '', address: '',
 }
 
 interface EmployeeFormProps {
@@ -39,13 +41,14 @@ interface EmployeeFormProps {
   submittingLabel?: string
   submitIcon?: ReactNode
   onCancel?: () => void
+  excludeEmployeeId?: string
   onSubmit: (values: EmployeeFormValues) => void | Promise<void>
 }
 
 /** Shared validated employee form used by Add Employee and the Edit dialog. */
 export function EmployeeForm({
   defaultValues, submitLabel, submittingLabel = 'Saving...', submitIcon,
-  onCancel, onSubmit,
+  onCancel, excludeEmployeeId, onSubmit,
 }: EmployeeFormProps) {
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -88,7 +91,17 @@ export function EmployeeForm({
               <SelectContent>{['Full-time', 'Part-time', 'Contract', 'Intern'].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-          <Field label="Reporting Manager" error={errors.manager?.message}><Input {...register('manager')} placeholder="Manager's full name" /></Field>
+          <Field label="Reporting Manager" error={errors.managerId?.message}>
+            <ManagerSelect
+              value={watch('managerId') ?? ''}
+              displayName={watch('manager')}
+              excludeEmployeeId={excludeEmployeeId}
+              onChange={(employee) => {
+                setValue('managerId', employee?.id ?? '', { shouldValidate: true })
+                setValue('manager', employee ? `${employee.firstName} ${employee.lastName}` : '', { shouldValidate: true })
+              }}
+            />
+          </Field>
         </CardContent>
       </Card>
 

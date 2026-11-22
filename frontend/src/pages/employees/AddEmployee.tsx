@@ -9,7 +9,7 @@ export default function AddEmployee() {
   const navigate = useNavigate()
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full space-y-6 sm:px-1 lg:px-2">
       <Button variant="ghost" size="sm" asChild><Link to="/employees"><ArrowLeft className="h-4 w-4" /> Back to employees</Link></Button>
       <DemoNotice compact />
       <div className="space-y-1">
