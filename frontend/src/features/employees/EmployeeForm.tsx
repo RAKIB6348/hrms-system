@@ -53,12 +53,12 @@ const PHOTO_TYPES = IMAGE_TYPES
 const PHOTO_MAX_SIZE = 2 * 1024 * 1024
 const DOC_TYPES = [...IMAGE_TYPES, 'application/pdf']
 
-const optionalEmail = z.string().refine((v) => !v || EMAIL_RE.test(v), 'Enter a valid email address')
+const optionalEmail = z.string().optional().or(z.literal('')).refine((v) => !v || EMAIL_RE.test(v), 'Enter a valid email address')
 const requiredEmail = z.string().min(1, 'Work email is required').refine((v) => EMAIL_RE.test(v), 'Enter a valid email address')
-const optionalPhone = z.string().refine((v) => !v || PHONE_RE.test(v), 'Enter a valid phone number')
+const optionalPhone = z.string().optional().or(z.literal('')).refine((v) => !v || PHONE_RE.test(v), 'Enter a valid phone number')
 const requiredPhone = z.string().min(1, 'Mobile number is required').refine((v) => PHONE_RE.test(v), 'Enter a valid phone number')
-const optionalDate = z.string().refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Enter a valid date')
-const money = z.string().refine((v) => !v || Number(v) >= 0, 'Amount must be zero or greater')
+const optionalDate = z.string().optional().or(z.literal('')).refine((v) => !v || !Number.isNaN(Date.parse(v)), 'Enter a valid date')
+const money = z.string().optional().or(z.literal('')).refine((v) => !v || Number(v) >= 0, 'Amount must be zero or greater')
 
 export function createEmployeeFormSchema(existingEmployeeIds: string[] = []) {
   return z.object({
@@ -309,138 +309,187 @@ export function EmployeeForm({
       {/* STEP 1: Personal & Contact Information */}
       {step === 0 && (
         <div className="space-y-6 animate-fade-in">
+          {/* Personal Information Card */}
           <FormSection
             icon={UserRound}
             title="Personal Information"
             description="Basic personal details, photo, and identity information."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-6">
+              {/* Profile Photo Upload */}
               <PhotoUpload
                 file={watch('photo')}
                 onChange={(file) => handleFile('photo', file, IMAGE_TYPES)}
               />
 
-              <Field label="First Name" error={errors.firstName?.message} required>
-                <FormInput {...register('firstName')} placeholder="e.g. Tanvir" />
-              </Field>
+              {/* Legal Name */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Legal Name
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="First Name" error={errors.firstName?.message} required>
+                    <FormInput {...register('firstName')} placeholder="e.g. Tanvir" />
+                  </Field>
+                  <Field label="Middle Name">
+                    <FormInput {...register('middleName')} placeholder="e.g. Ahmed" />
+                  </Field>
+                  <Field label="Last Name" error={errors.lastName?.message} required>
+                    <FormInput {...register('lastName')} placeholder="e.g. Hossain" />
+                  </Field>
+                </div>
+              </div>
 
-              <Field label="Middle Name">
-                <FormInput {...register('middleName')} placeholder="e.g. Ahmed" />
-              </Field>
+              {/* Demographic Details */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Demographic Details
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Date of Birth" error={errors.dob?.message} required>
+                    <FormInput type="date" {...register('dob')} />
+                  </Field>
+                  <Field label="Gender">
+                    <Select value={watch('gender') || ''} onValueChange={(v) => setValue('gender', v)}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Male', 'Female', 'Other'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Marital Status">
+                    <Select value={watch('maritalStatus') || ''} onValueChange={(v) => setValue('maritalStatus', v)}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:border-slate-900/60">
+                        <SelectValue placeholder="Select marital status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Single', 'Married', 'Divorced', 'Widowed'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Blood Group">
+                    <Select value={watch('bloodGroup') || ''} onValueChange={(v) => setValue('bloodGroup', v)}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:border-slate-900/60">
+                        <SelectValue placeholder="Select blood group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((v) => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+              </div>
 
-              <Field label="Last Name" error={errors.lastName?.message} required>
-                <FormInput {...register('lastName')} placeholder="e.g. Hossain" />
-              </Field>
-
-              <Field label="Date of Birth" error={errors.dob?.message} required>
-                <FormInput type="date" {...register('dob')} />
-              </Field>
-
-              <Field label="Gender">
-                <Select value={watch('gender') || ''} onValueChange={(v) => setValue('gender', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['Male', 'Female', 'Other'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Marital Status">
-                <Select value={watch('maritalStatus') || ''} onValueChange={(v) => setValue('maritalStatus', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select marital status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['Single', 'Married', 'Divorced', 'Widowed'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Blood Group">
-                <Select value={watch('bloodGroup') || ''} onValueChange={(v) => setValue('bloodGroup', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select blood group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((v) => (
-                      <SelectItem key={v} value={v}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Nationality">
-                <FormInput {...register('nationality')} placeholder="e.g. Bangladeshi" />
-              </Field>
-
-              <Field label="Father's Name">
-                <FormInput {...register('fatherName')} placeholder="Father's full name" />
-              </Field>
-
-              <Field label="Mother's Name">
-                <FormInput {...register('motherName')} placeholder="Mother's full name" />
-              </Field>
+              {/* Family & Background */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Background & Family
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Nationality">
+                    <FormInput {...register('nationality')} placeholder="e.g. Bangladeshi" />
+                  </Field>
+                  <Field label="Father's Name">
+                    <FormInput {...register('fatherName')} placeholder="Father's full name" />
+                  </Field>
+                  <Field label="Mother's Name">
+                    <FormInput {...register('motherName')} placeholder="Mother's full name" />
+                  </Field>
+                </div>
+              </div>
             </div>
           </FormSection>
 
+          {/* Contact Information Card */}
           <FormSection
             icon={Mail}
             title="Contact Information"
-            description="Communication channels, contact numbers, and residential address."
+            description="Communication channels, phone numbers, and residential address."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Personal Email" error={errors.personalEmail?.message}>
-                <FormInput type="email" {...register('personalEmail')} placeholder="name@personal.com" />
-              </Field>
-
-              <Field label="Work Email" error={errors.workEmail?.message} required>
-                <FormInput type="email" {...register('workEmail')} placeholder="name@company.com" />
-              </Field>
-
-              <Field label="Primary Mobile Number" error={errors.primaryMobile?.message} required>
-                <FormInput {...register('primaryMobile')} placeholder="+880 1712-345678" />
-              </Field>
-
-              <Field label="Alternative Mobile Number" error={errors.alternativeMobile?.message}>
-                <FormInput {...register('alternativeMobile')} placeholder="+880 1812-345678" />
-              </Field>
-
-              <Field label="Present Address" className="sm:col-span-2">
-                <FormTextarea {...register('presentAddress')} placeholder="Street address, house/flat number, road..." />
-              </Field>
-
-              <div className="flex flex-col justify-end pb-1.5 sm:col-span-2 lg:col-span-1">
-                <label className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-xs sm:text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300 transition-colors">
-                  <Checkbox
-                    checked={Boolean(sameAsPresent)}
-                    onCheckedChange={(checked) => setValue('sameAsPresent', checked === true)}
-                    className="data-[state=checked]:bg-[#4F46E5] data-[state=checked]:border-[#4F46E5]"
-                  />
-                  <span>Same as Present Address</span>
-                </label>
+            <div className="space-y-6">
+              {/* Communication Channels */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-indigo-500" /> Communication Channels
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Work Email" error={errors.workEmail?.message} required>
+                    <FormInput type="email" {...register('workEmail')} placeholder="name@company.com" />
+                  </Field>
+                  <Field label="Personal Email" error={errors.personalEmail?.message}>
+                    <FormInput type="email" {...register('personalEmail')} placeholder="name@personal.com" />
+                  </Field>
+                  <Field label="Primary Mobile" error={errors.primaryMobile?.message} required>
+                    <FormInput {...register('primaryMobile')} placeholder="+880 1712-345678" />
+                  </Field>
+                  <Field label="Alternative Mobile" error={errors.alternativeMobile?.message}>
+                    <FormInput {...register('alternativeMobile')} placeholder="+880 1812-345678" />
+                  </Field>
+                </div>
               </div>
 
-              <Field label="Permanent Address" className="sm:col-span-2">
-                <FormTextarea {...register('permanentAddress')} placeholder="Permanent home address..." />
-              </Field>
+              {/* Address Details */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-indigo-500" /> Address Details
+                </p>
 
-              <Field label="City">
-                <FormInput {...register('city')} placeholder="e.g. Dhaka" />
-              </Field>
+                {/* Present and Permanent Address side-by-side */}
+                <div className="grid gap-5 md:grid-cols-2">
+                  <Field label="Present Address" error={errors.presentAddress?.message}>
+                    <FormTextarea
+                      {...register('presentAddress')}
+                      placeholder="Street address, house/flat number, road..."
+                      className="min-h-[92px]"
+                    />
+                  </Field>
 
-              <Field label="District">
-                <FormInput {...register('district')} placeholder="e.g. Dhaka" />
-              </Field>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                        Permanent Address
+                      </Label>
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer transition-colors">
+                        <Checkbox
+                          checked={Boolean(sameAsPresent)}
+                          onCheckedChange={(checked) => setValue('sameAsPresent', checked === true)}
+                          className="h-3.5 w-3.5 rounded data-[state=checked]:bg-[#4F46E5] data-[state=checked]:border-[#4F46E5]"
+                        />
+                        <span>Same as present address</span>
+                      </label>
+                    </div>
+                    <FormTextarea
+                      {...register('permanentAddress')}
+                      placeholder="Permanent home address..."
+                      disabled={Boolean(sameAsPresent)}
+                      className={cn(
+                        'min-h-[92px]',
+                        sameAsPresent && 'bg-slate-50 dark:bg-slate-900/40 text-slate-500 cursor-not-allowed opacity-80',
+                      )}
+                    />
+                  </div>
+                </div>
 
-              <Field label="Postal Code">
-                <FormInput {...register('postalCode')} placeholder="e.g. 1212" />
-              </Field>
-
-              <Field label="Country">
-                <FormInput {...register('country')} placeholder="e.g. Bangladesh" />
-              </Field>
+                {/* City, District, Postal Code, Country: 4 columns */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+                  <Field label="City">
+                    <FormInput {...register('city')} placeholder="e.g. Dhaka" />
+                  </Field>
+                  <Field label="District">
+                    <FormInput {...register('district')} placeholder="e.g. Dhaka" />
+                  </Field>
+                  <Field label="Postal Code">
+                    <FormInput {...register('postalCode')} placeholder="e.g. 1212" />
+                  </Field>
+                  <Field label="Country">
+                    <FormInput {...register('country')} placeholder="e.g. Bangladesh" />
+                  </Field>
+                </div>
+              </div>
             </div>
           </FormSection>
         </div>
@@ -449,156 +498,183 @@ export function EmployeeForm({
       {/* STEP 2: Employment & Work Information */}
       {step === 1 && (
         <div className="space-y-6 animate-fade-in">
+          {/* Identity Documents */}
           <FormSection
             icon={ShieldCheck}
             title="Identity Documents"
             description="Official identification numbers and tax identification records."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="National ID (NID) Number">
-                <FormInput {...register('nidNumber')} placeholder="e.g. 19901234567890123" />
-              </Field>
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Field label="National ID (NID) Number">
+                  <FormInput {...register('nidNumber')} placeholder="e.g. 19901234567890123" />
+                </Field>
+                <Field label="Birth Registration Number">
+                  <FormInput {...register('birthRegistrationNumber')} placeholder="e.g. 19901234567890123" />
+                </Field>
+                <Field label="Tax Identification Number (TIN)">
+                  <FormInput {...register('tin')} placeholder="e.g. 123456789012" />
+                </Field>
+              </div>
 
-              <Field label="Birth Registration Number">
-                <FormInput {...register('birthRegistrationNumber')} placeholder="e.g. 19901234567890123" />
-              </Field>
-
-              <Field label="Passport Number">
-                <FormInput {...register('passportNumber')} placeholder="e.g. A01234567" />
-              </Field>
-
-              <Field label="Passport Expiry Date" error={errors.passportExpiryDate?.message}>
-                <FormInput type="date" {...register('passportExpiryDate')} />
-              </Field>
-
-              <Field label="Tax Identification Number (TIN)">
-                <FormInput {...register('tin')} placeholder="e.g. 123456789012" />
-              </Field>
+              <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <Field label="Passport Number">
+                  <FormInput {...register('passportNumber')} placeholder="e.g. A01234567" />
+                </Field>
+                <Field label="Passport Expiry Date" error={errors.passportExpiryDate?.message}>
+                  <FormInput type="date" {...register('passportExpiryDate')} />
+                </Field>
+              </div>
             </div>
           </FormSection>
 
+          {/* Employment Information */}
           <FormSection
             icon={BriefcaseBusiness}
             title="Employment Information"
             description="Role details, departmental assignment, reporting line and work arrangement."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Employee ID" required hint="Auto-generated">
-                <div className="relative">
-                  <FormInput
-                    value={watch('employeeId') ?? employeeId}
-                    readOnly
-                    className="bg-slate-100 font-mono font-bold text-[#4F46E5] dark:bg-slate-800 dark:text-indigo-400 cursor-not-allowed"
-                  />
+            <div className="space-y-6">
+              {/* Primary Placement */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Organizational Placement
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Employee ID" required hint="Auto-generated">
+                    <FormInput
+                      value={watch('employeeId') ?? employeeId}
+                      readOnly
+                      className="bg-slate-100 font-mono font-bold text-[#4F46E5] dark:bg-slate-800 dark:text-indigo-400 cursor-not-allowed"
+                    />
+                  </Field>
+                  <Field label="Date of Joining" error={errors.joinDate?.message} required>
+                    <FormInput type="date" {...register('joinDate')} />
+                  </Field>
+                  <Field label="Department" error={errors.department?.message} required>
+                    <Select value={watch('department') || ''} onValueChange={(v) => setValue('department', v, { shouldValidate: true })}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </div>
-              </Field>
+              </div>
 
-              <Field label="Date of Joining" error={errors.joinDate?.message} required>
-                <FormInput type="date" {...register('joinDate')} />
-              </Field>
+              {/* Position & Reporting */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Position & Hierarchy
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Designation" error={errors.designation?.message} required>
+                    <Select value={watch('designation') || ''} onValueChange={(v) => setValue('designation', v, { shouldValidate: true })}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                        <SelectValue placeholder="Select designation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {designations.map((d) => <SelectItem key={d.id} value={d.title}>{d.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Employment Type" error={errors.employmentType?.message} required>
+                    <Select value={watch('employmentType') || 'Full-time'} onValueChange={(v) => setValue('employmentType', v, { shouldValidate: true })}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Full-time', 'Part-time', 'Contract', 'Intern'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Reporting Manager" error={errors.managerId?.message}>
+                    <ManagerSelect
+                      value={watch('managerId') ?? ''}
+                      displayName={watch('manager')}
+                      excludeEmployeeId={excludeEmployeeId}
+                      onChange={(employee) => {
+                        setValue('managerId', employee?.id ?? '', { shouldValidate: true })
+                        setValue('manager', employee ? `${employee.firstName} ${employee.lastName}` : '', { shouldValidate: true })
+                      }}
+                    />
+                  </Field>
+                </div>
+              </div>
 
-              <Field label="Department" error={errors.department?.message} required>
-                <Select value={watch('department') || ''} onValueChange={(v) => setValue('department', v, { shouldValidate: true })}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
+              {/* Work Arrangement */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Work Arrangement & Status
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Employment Status">
+                    <Select value={watch('employmentStatus') || 'Active'} onValueChange={(v) => setValue('employmentStatus', v)}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['Active', 'Probation', 'On Leave', 'Inactive'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Work Mode">
+                    <Select value={watch('workMode') || 'On-site'} onValueChange={(v) => setValue('workMode', v)}>
+                      <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                        <SelectValue placeholder="Select work mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['On-site', 'Remote', 'Hybrid'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Work Location">
+                    <FormInput {...register('workLocation')} placeholder="e.g. Dhaka HQ, Level 4" />
+                  </Field>
+                </div>
+              </div>
 
-              <Field label="Designation" error={errors.designation?.message} required>
-                <Select value={watch('designation') || ''} onValueChange={(v) => setValue('designation', v, { shouldValidate: true })}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select designation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {designations.map((d) => <SelectItem key={d.id} value={d.title}>{d.title}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
+              {/* Probation & Contract Dates */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Probation & Contract Schedule
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Probation Start Date" error={errors.probationStart?.message}>
+                    <FormInput type="date" {...register('probationStart')} />
+                  </Field>
+                  <Field label="Probation End Date" error={errors.probationEnd?.message}>
+                    <FormInput type="date" {...register('probationEnd')} />
+                  </Field>
+                  <Field label="Confirmation Date" error={errors.confirmationDate?.message}>
+                    <FormInput type="date" {...register('confirmationDate')} />
+                  </Field>
+                </div>
 
-              <Field label="Employment Type" error={errors.employmentType?.message} required>
-                <Select value={watch('employmentType') || 'Full-time'} onValueChange={(v) => setValue('employmentType', v, { shouldValidate: true })}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['Full-time', 'Part-time', 'Contract', 'Intern'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Reporting Manager" error={errors.managerId?.message}>
-                <ManagerSelect
-                  value={watch('managerId') ?? ''}
-                  displayName={watch('manager')}
-                  excludeEmployeeId={excludeEmployeeId}
-                  onChange={(employee) => {
-                    setValue('managerId', employee?.id ?? '', { shouldValidate: true })
-                    setValue('manager', employee ? `${employee.firstName} ${employee.lastName}` : '', { shouldValidate: true })
-                  }}
-                />
-              </Field>
-
-              <Field label="Employment Status">
-                <Select value={watch('employmentStatus') || 'Active'} onValueChange={(v) => setValue('employmentStatus', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['Active', 'Probation', 'On Leave', 'Inactive'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Work Location">
-                <FormInput {...register('workLocation')} placeholder="e.g. Dhaka HQ, Level 4" />
-              </Field>
-
-              <Field label="Work Mode">
-                <Select value={watch('workMode') || 'On-site'} onValueChange={(v) => setValue('workMode', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select work mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['On-site', 'Remote', 'Hybrid'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Probation Start Date" error={errors.probationStart?.message}>
-                <FormInput type="date" {...register('probationStart')} />
-              </Field>
-
-              <Field label="Probation End Date" error={errors.probationEnd?.message}>
-                <FormInput type="date" {...register('probationEnd')} />
-              </Field>
-
-              <Field label="Confirmation Date" error={errors.confirmationDate?.message}>
-                <FormInput type="date" {...register('confirmationDate')} />
-              </Field>
-
-              <Field label="Contract Start Date" error={errors.contractStart?.message}>
-                <FormInput type="date" {...register('contractStart')} />
-              </Field>
-
-              <Field label="Contract End Date" error={errors.contractEnd?.message}>
-                <FormInput type="date" {...register('contractEnd')} />
-              </Field>
+                <div className="grid gap-4 sm:grid-cols-2 mt-4">
+                  <Field label="Contract Start Date" error={errors.contractStart?.message}>
+                    <FormInput type="date" {...register('contractStart')} />
+                  </Field>
+                  <Field label="Contract End Date" error={errors.contractEnd?.message}>
+                    <FormInput type="date" {...register('contractEnd')} />
+                  </Field>
+                </div>
+              </div>
             </div>
           </FormSection>
 
+          {/* Work Schedule */}
           <FormSection
             icon={Clock}
             title="Work Schedule & Attendance"
             description="Shift allocation, working hours, and organizational attendance policy."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="Assigned Shift">
                 <Select value={watch('shift') || ''} onValueChange={(v) => setValue('shift', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
+                  <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
                     <SelectValue placeholder="Select shift" />
                   </SelectTrigger>
                   <SelectContent>
@@ -617,7 +693,7 @@ export function EmployeeForm({
 
               <Field label="Attendance Policy">
                 <Select value={watch('attendancePolicy') || ''} onValueChange={(v) => setValue('attendancePolicy', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
+                  <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
                     <SelectValue placeholder="Select policy" />
                   </SelectTrigger>
                   <SelectContent>
@@ -633,45 +709,54 @@ export function EmployeeForm({
       {/* STEP 3: Salary & Bank Information */}
       {step === 2 && (
         <div className="space-y-6 animate-fade-in">
+          {/* Compensation Section */}
           <FormSection
             icon={Wallet}
             title="Salary & Compensation"
             description={`Monthly earnings breakdown and automated salary calculations in ${currency}.`}
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Salary Type">
-                <Select value={watch('salaryType') || 'Monthly'} onValueChange={(v) => setValue('salaryType', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select salary type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['Monthly', 'Daily', 'Hourly'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
+            <div className="space-y-6">
+              {/* Basic Salary & Type */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Salary Type">
+                  <Select value={watch('salaryType') || 'Monthly'} onValueChange={(v) => setValue('salaryType', v)}>
+                    <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                      <SelectValue placeholder="Select salary type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Monthly', 'Daily', 'Hourly'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
 
-              <Field label="Basic Salary" error={errors.basicSalary?.message} required hint={`In ${currency}`}>
-                <FormInput type="number" {...register('basicSalary')} placeholder="e.g. 50000" />
-              </Field>
+                <Field label="Basic Salary" error={errors.basicSalary?.message} required hint={`In ${currency}`}>
+                  <FormInput type="number" {...register('basicSalary')} placeholder="e.g. 50000" />
+                </Field>
+              </div>
 
-              <Field label="House Rent Allowance (HRA)" error={errors.hra?.message} hint={`In ${currency}`}>
-                <FormInput type="number" {...register('hra')} placeholder="e.g. 25000" />
-              </Field>
+              {/* Allowances: 4 columns */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                  Monthly Allowances
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="House Rent (HRA)" error={errors.hra?.message} hint={`In ${currency}`}>
+                    <FormInput type="number" {...register('hra')} placeholder="e.g. 25000" />
+                  </Field>
+                  <Field label="Medical Allowance" error={errors.medicalAllowance?.message} hint={`In ${currency}`}>
+                    <FormInput type="number" {...register('medicalAllowance')} placeholder="e.g. 5000" />
+                  </Field>
+                  <Field label="Transport Allowance" error={errors.transportAllowance?.message} hint={`In ${currency}`}>
+                    <FormInput type="number" {...register('transportAllowance')} placeholder="e.g. 5000" />
+                  </Field>
+                  <Field label="Other Allowances" error={errors.otherAllowances?.message} hint={`In ${currency}`}>
+                    <FormInput type="number" {...register('otherAllowances')} placeholder="e.g. 0" />
+                  </Field>
+                </div>
+              </div>
 
-              <Field label="Medical Allowance" error={errors.medicalAllowance?.message} hint={`In ${currency}`}>
-                <FormInput type="number" {...register('medicalAllowance')} placeholder="e.g. 5000" />
-              </Field>
-
-              <Field label="Transport Allowance" error={errors.transportAllowance?.message} hint={`In ${currency}`}>
-                <FormInput type="number" {...register('transportAllowance')} placeholder="e.g. 5000" />
-              </Field>
-
-              <Field label="Other Allowances" error={errors.otherAllowances?.message} hint={`In ${currency}`}>
-                <FormInput type="number" {...register('otherAllowances')} placeholder="e.g. 0" />
-              </Field>
-
-              {/* Gross Salary Highlight Card */}
-              <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 to-teal-50/70 p-5 shadow-xs dark:border-emerald-900/60 dark:from-emerald-950/30 dark:to-teal-950/20">
+              {/* Gross Salary Highlight Banner */}
+              <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 to-teal-50/70 p-5 shadow-xs dark:border-emerald-900/60 dark:from-emerald-950/30 dark:to-teal-950/20">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3.5">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#059669] text-white shadow-sm shadow-emerald-600/30">
@@ -682,7 +767,7 @@ export function EmployeeForm({
                         <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                           Gross Salary
                         </span>
-                        <span className="rounded-full bg-emerald-200/80 px-2 py-0.5 text-[10px] font-bold text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200">
+                        <span className="rounded-full bg-emerald-200/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200">
                           Auto-calculated
                         </span>
                       </div>
@@ -704,50 +789,68 @@ export function EmployeeForm({
             </div>
           </FormSection>
 
+          {/* Payment & Banking Section */}
           <FormSection
             icon={Landmark}
             title="Payment & Banking Details"
             description="Salary disbursement mechanism, account numbers, and routing information."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Payment Method">
-                <Select value={watch('paymentMethod') || 'Bank Transfer'} onValueChange={(v) => setValue('paymentMethod', v)}>
-                  <SelectTrigger className="h-[42px] rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/60">
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['Bank Transfer', 'Cash', 'Mobile Banking'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
+            <div className="space-y-6">
+              {/* Payment Method */}
+              <div className="sm:w-1/2">
+                <Field label="Disbursement Method">
+                  <Select value={watch('paymentMethod') || 'Bank Transfer'} onValueChange={(v) => setValue('paymentMethod', v)}>
+                    <SelectTrigger className="h-[42px] rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Bank Transfer', 'Cash', 'Mobile Banking'].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
 
-              <Field label="Bank Name">
-                <FormInput {...register('bankName')} placeholder="e.g. BRAC Bank Limited" />
-              </Field>
+              {/* Bank Account Details */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                  <CreditCard className="h-3.5 w-3.5 text-indigo-500" /> Bank Account Details
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="Bank Name">
+                    <FormInput {...register('bankName')} placeholder="e.g. BRAC Bank Limited" />
+                  </Field>
+                  <Field label="Branch Name">
+                    <FormInput {...register('branchName')} placeholder="e.g. Gulshan Branch" />
+                  </Field>
+                  <Field label="Account Holder Name">
+                    <FormInput {...register('accountHolderName')} placeholder="Name as per bank account" />
+                  </Field>
+                </div>
 
-              <Field label="Branch Name">
-                <FormInput {...register('branchName')} placeholder="e.g. Gulshan Branch" />
-              </Field>
+                <div className="grid gap-4 sm:grid-cols-2 mt-4">
+                  <Field label="Account Number">
+                    <FormInput type="password" autoComplete="off" {...register('accountNumber')} placeholder="••••••••••••" />
+                  </Field>
+                  <Field label="Routing Number">
+                    <FormInput {...register('routingNumber')} placeholder="e.g. 060261234" />
+                  </Field>
+                </div>
+              </div>
 
-              <Field label="Account Holder Name">
-                <FormInput {...register('accountHolderName')} placeholder="Name as per bank account" />
-              </Field>
-
-              <Field label="Account Number">
-                <FormInput type="password" autoComplete="off" {...register('accountNumber')} placeholder="••••••••••••" />
-              </Field>
-
-              <Field label="Routing Number">
-                <FormInput {...register('routingNumber')} placeholder="e.g. 060261234" />
-              </Field>
-
-              <Field label="Mobile Banking Provider">
-                <FormInput {...register('mobileProvider')} placeholder="e.g. bKash, Nagad, Rocket" />
-              </Field>
-
-              <Field label="Mobile Banking Account Number">
-                <FormInput type="password" autoComplete="off" {...register('mobileAccountNumber')} placeholder="••••••••••••" />
-              </Field>
+              {/* Mobile Financial Services */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-indigo-500" /> Mobile Financial Services (MFS)
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Mobile Banking Provider">
+                    <FormInput {...register('mobileProvider')} placeholder="e.g. bKash, Nagad, Rocket" />
+                  </Field>
+                  <Field label="Mobile Account Number">
+                    <FormInput type="password" autoComplete="off" {...register('mobileAccountNumber')} placeholder="••••••••••••" />
+                  </Field>
+                </div>
+              </div>
             </div>
 
             <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
@@ -760,6 +863,7 @@ export function EmployeeForm({
       {/* STEP 4: Education, Experience & Documents */}
       {step === 3 && (
         <div className="space-y-6 animate-fade-in">
+          {/* Education Section */}
           <FormSection
             icon={GraduationCap}
             title="Educational Qualifications"
@@ -772,27 +876,32 @@ export function EmployeeForm({
               addLabel="Add Qualification"
               itemTitle={(idx) => `Qualification #${idx + 1}`}
               render={(_field, index) => (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Field label="Degree / Qualification">
-                    <FormInput {...register(`education.${index}.degree`)} placeholder="e.g. Bachelor of Science" />
-                  </Field>
-                  <Field label="Institution Name">
-                    <FormInput {...register(`education.${index}.institution`)} placeholder="e.g. University of Dhaka" />
-                  </Field>
-                  <Field label="Subject / Major">
-                    <FormInput {...register(`education.${index}.subject`)} placeholder="e.g. Computer Science" />
-                  </Field>
-                  <Field label="Passing Year">
-                    <FormInput {...register(`education.${index}.passingYear`)} placeholder="e.g. 2022" />
-                  </Field>
-                  <Field label="Result / CGPA / Grade">
-                    <FormInput {...register(`education.${index}.result`)} placeholder="e.g. 3.85 / 4.00" />
-                  </Field>
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label="Degree / Qualification">
+                      <FormInput {...register(`education.${index}.degree`)} placeholder="e.g. Bachelor of Science" />
+                    </Field>
+                    <Field label="Institution Name">
+                      <FormInput {...register(`education.${index}.institution`)} placeholder="e.g. University of Dhaka" />
+                    </Field>
+                    <Field label="Subject / Major">
+                      <FormInput {...register(`education.${index}.subject`)} placeholder="e.g. Computer Science" />
+                    </Field>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Passing Year">
+                      <FormInput {...register(`education.${index}.passingYear`)} placeholder="e.g. 2022" />
+                    </Field>
+                    <Field label="Result / CGPA / Grade">
+                      <FormInput {...register(`education.${index}.result`)} placeholder="e.g. 3.85 / 4.00" />
+                    </Field>
+                  </div>
                 </div>
               )}
             />
           </FormSection>
 
+          {/* Previous Employment Section */}
           <FormSection
             icon={Building2}
             title="Previous Employment History"
@@ -805,23 +914,28 @@ export function EmployeeForm({
               addLabel="Add Employment Record"
               itemTitle={(idx) => `Employment #${idx + 1}`}
               render={(_field, index) => (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Field label="Company Name">
-                    <FormInput {...register(`experience.${index}.company`)} placeholder="e.g. TechCorp Solutions" />
-                  </Field>
-                  <Field label="Job Title / Role">
-                    <FormInput {...register(`experience.${index}.jobTitle`)} placeholder="e.g. Software Engineer" />
-                  </Field>
-                  <Field label="Start Date">
-                    <FormInput type="date" {...register(`experience.${index}.startDate`)} />
-                  </Field>
-                  <Field label="End Date">
-                    <FormInput type="date" {...register(`experience.${index}.endDate`)} />
-                  </Field>
-                  <Field label="Responsibilities & Achievements" className="sm:col-span-2 lg:col-span-3">
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Company Name">
+                      <FormInput {...register(`experience.${index}.company`)} placeholder="e.g. TechCorp Solutions" />
+                    </Field>
+                    <Field label="Job Title / Role">
+                      <FormInput {...register(`experience.${index}.jobTitle`)} placeholder="e.g. Software Engineer" />
+                    </Field>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Start Date">
+                      <FormInput type="date" {...register(`experience.${index}.startDate`)} />
+                    </Field>
+                    <Field label="End Date">
+                      <FormInput type="date" {...register(`experience.${index}.endDate`)} />
+                    </Field>
+                  </div>
+                  <Field label="Responsibilities & Achievements">
                     <FormTextarea
                       {...register(`experience.${index}.responsibilities`)}
                       placeholder="Summary of primary roles, key projects, and responsibilities handled..."
+                      className="min-h-[72px]"
                     />
                   </Field>
                 </div>
@@ -829,6 +943,7 @@ export function EmployeeForm({
             />
           </FormSection>
 
+          {/* Emergency Contacts Section */}
           <FormSection
             icon={HeartHandshake}
             title="Emergency Contacts"
@@ -841,20 +956,22 @@ export function EmployeeForm({
               addLabel="Add Emergency Contact"
               itemTitle={(idx) => `Emergency Contact #${idx + 1}`}
               render={(_field, index) => (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Field label="Contact Person Name">
-                    <FormInput {...register(`emergencyContacts.${index}.name`)} placeholder="Full name" />
-                  </Field>
-                  <Field label="Relationship">
-                    <FormInput {...register(`emergencyContacts.${index}.relationship`)} placeholder="e.g. Spouse, Parent, Sibling" />
-                  </Field>
-                  <Field label="Primary Phone Number">
-                    <FormInput {...register(`emergencyContacts.${index}.phone`)} placeholder="+880 1712-345678" />
-                  </Field>
-                  <Field label="Alternative Phone Number">
-                    <FormInput {...register(`emergencyContacts.${index}.alternativePhone`)} placeholder="Optional alternative phone" />
-                  </Field>
-                  <Field label="Address / Residence" className="sm:col-span-2">
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field label="Contact Person Name">
+                      <FormInput {...register(`emergencyContacts.${index}.name`)} placeholder="Full name" />
+                    </Field>
+                    <Field label="Relationship">
+                      <FormInput {...register(`emergencyContacts.${index}.relationship`)} placeholder="e.g. Spouse, Parent" />
+                    </Field>
+                    <Field label="Primary Phone">
+                      <FormInput {...register(`emergencyContacts.${index}.phone`)} placeholder="+880 1712-345678" />
+                    </Field>
+                    <Field label="Alternative Phone">
+                      <FormInput {...register(`emergencyContacts.${index}.alternativePhone`)} placeholder="Optional phone" />
+                    </Field>
+                  </div>
+                  <Field label="Residential Address">
                     <FormInput {...register(`emergencyContacts.${index}.address`)} placeholder="Contact person's residential address" />
                   </Field>
                 </div>
@@ -862,12 +979,13 @@ export function EmployeeForm({
             />
           </FormSection>
 
+          {/* Employee Documents Section */}
           <FormSection
             icon={FolderUp}
             title="Employee Documents"
             description="Upload scanned documents and verification records (JPG, PNG, WebP or PDF, up to 5 MB each)."
           >
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <FileField
                 label="National ID (NID) Copy"
                 name="nidCopy"
@@ -890,7 +1008,7 @@ export function EmployeeForm({
                 onChange={(file) => handleFile('passportCopy', file, DOC_TYPES)}
               />
               <FileField
-                label="Resume / Curriculum Vitae"
+                label="Resume / CV"
                 name="resume"
                 value={watch('resume')}
                 types={DOC_TYPES}
@@ -911,21 +1029,21 @@ export function EmployeeForm({
                 onChange={(file) => handleFile('experienceCertificates', file, DOC_TYPES)}
               />
               <FileField
-                label="Appointment / Offer Letter"
+                label="Appointment Letter"
                 name="appointmentLetter"
                 value={watch('appointmentLetter')}
                 types={DOC_TYPES}
                 onChange={(file) => handleFile('appointmentLetter', file, DOC_TYPES)}
               />
               <FileField
-                label="Other Supporting Documents"
+                label="Other Documents"
                 name="otherDocuments"
                 value={watch('otherDocuments')}
                 types={DOC_TYPES}
                 onChange={(file) => handleFile('otherDocuments', file, DOC_TYPES)}
               />
             </div>
-            <p className="mt-5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
               Files are held in the browser session in demo mode. Document contents are not uploaded to external servers.
             </p>
           </FormSection>
@@ -1074,7 +1192,7 @@ export function EmployeeForm({
               {steps[step].title}
             </span>
             {currentStepHasErrors && (
-              <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626]">
+              <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
                 <AlertCircle className="h-3.5 w-3.5" /> Check errors
               </span>
             )}
@@ -1100,7 +1218,7 @@ export function EmployeeForm({
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
               disabled={step === 0}
-              className="h-[42px] px-4 rounded-lg text-xs font-semibold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="h-[42px] px-4 rounded-lg text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               <ChevronLeft className="h-4 w-4 mr-1" /> Previous
             </Button>
@@ -1265,14 +1383,14 @@ function FormSection({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all">
+    <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-[#4F46E5] ring-1 ring-indigo-500/10 dark:bg-indigo-950/50 dark:text-indigo-400">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] ring-1 ring-indigo-500/10 dark:bg-indigo-950/50 dark:text-indigo-400">
             <Icon className="h-5 w-5 stroke-[1.75]" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-semibold text-[#0F172A] dark:text-slate-100 leading-snug">
+            <h2 className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-slate-100 leading-snug">
               {title}
             </h2>
             {description && (
@@ -1294,9 +1412,9 @@ function FormInput(props: ComponentProps<typeof Input>) {
     <Input
       {...props}
       className={cn(
-        'h-[42px] rounded-lg border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors',
-        'hover:border-slate-300 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
-        'dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-700 dark:focus-visible:border-indigo-500',
+        'h-[42px] rounded-lg border-slate-300 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors shadow-2xs',
+        'hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
+        'dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus-visible:border-indigo-500',
         props.className,
       )}
     />
@@ -1308,9 +1426,9 @@ function FormTextarea(props: ComponentProps<typeof Textarea>) {
     <Textarea
       {...props}
       className={cn(
-        'min-h-[92px] rounded-lg border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors leading-relaxed',
-        'hover:border-slate-300 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
-        'dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-700 dark:focus-visible:border-indigo-500',
+        'min-h-[92px] rounded-lg border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors leading-relaxed shadow-2xs',
+        'hover:border-slate-400 focus-visible:border-[#4F46E5] focus-visible:ring-2 focus-visible:ring-indigo-500/20',
+        'dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus-visible:border-indigo-500',
         props.className,
       )}
     />
@@ -1335,16 +1453,16 @@ function Field({
   return (
     <div className={cn('space-y-1.5', className)}>
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
           {label}
-          {required && <span className="ml-1 text-[#DC2626] font-semibold">*</span>}
+          {required && <span className="ml-1 text-rose-500 font-bold">*</span>}
         </Label>
         {hint && <span className="text-[11px] text-slate-400 dark:text-slate-500">{hint}</span>}
       </div>
       {children}
       {error && (
-        <p className="text-xs font-medium text-[#DC2626] flex items-center gap-1 mt-1 animate-fade-in">
-          <span className="inline-block h-1 w-1 rounded-full bg-[#DC2626]" />
+        <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1 animate-fade-in">
+          <AlertCircle className="h-3 w-3 shrink-0" />
           {error}
         </p>
       )}
@@ -1485,7 +1603,7 @@ function PhotoUpload({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 rounded-lg text-xs font-medium text-[#DC2626] hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+              className="h-8 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30"
               onClick={removePhoto}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
@@ -1499,8 +1617,8 @@ function PhotoUpload({
         </p>
 
         {error && (
-          <p className="text-xs font-medium text-[#DC2626] flex items-center gap-1.5 justify-center sm:justify-start">
-            <span className="inline-block h-1 w-1 rounded-full bg-[#DC2626]" />
+          <p className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5 justify-center sm:justify-start">
+            <AlertCircle className="h-3 w-3 shrink-0" />
             {error}
           </p>
         )}
@@ -1541,7 +1659,7 @@ function Repeatable<T extends { id: string }>({
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="relative rounded-xl border border-[#E2E8F0] bg-slate-50/50 p-4 sm:p-5 shadow-xs transition-all dark:border-slate-800 dark:bg-slate-950/40"
+              className="relative rounded-xl border border-[#E2E8F0] bg-slate-50/50 p-4 sm:p-5 shadow-2xs transition-all dark:border-slate-800 dark:bg-slate-950/40"
             >
               <div className="mb-4 flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-800">
                 <div className="flex items-center gap-2">
@@ -1556,7 +1674,7 @@ function Repeatable<T extends { id: string }>({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2.5 text-xs font-medium text-[#DC2626] hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                  className="h-7 px-2.5 text-xs font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30"
                   onClick={() => onRemove(index)}
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
@@ -1598,7 +1716,7 @@ function FileField({
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</Label>
+      <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label}</Label>
       <input
         ref={inputRef}
         type="file"
@@ -1626,7 +1744,7 @@ function FileField({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-[#DC2626] hover:bg-red-100/60 dark:hover:bg-red-950/40"
+            className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-100/60 dark:hover:bg-rose-950/40"
             onClick={() => {
               if (inputRef.current) inputRef.current.value = ''
               onChange(null)
@@ -1644,7 +1762,7 @@ function FileField({
         >
           <span className="flex items-center gap-2 truncate">
             <FolderUp className="h-4 w-4 text-slate-400" />
-            <span className="truncate">Choose file (PDF, PNG, JPG)</span>
+            <span className="truncate">Choose file</span>
           </span>
           <span className="shrink-0 text-[11px] font-semibold text-[#4F46E5] dark:text-indigo-400">
             Browse
