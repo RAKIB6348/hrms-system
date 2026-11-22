@@ -40,6 +40,7 @@ import {
 import { mockPayrollPayments as initialPayments } from '@/mocks/payrollData'
 import { employees } from '@/mocks/data'
 import { formatBDT } from '@/lib/payrollUtils'
+import { usePayrollStore } from '@/hooks/use-payroll-store'
 import type { PayrollPaymentRecord } from '@/types/payroll'
 
 const statusStyles: Record<string, string> = {
@@ -49,7 +50,8 @@ const statusStyles: Record<string, string> = {
 }
 
 export default function PayrollPayments() {
-  const [payments, setPayments] = useState<PayrollPaymentRecord[]>(initialPayments)
+  const payments = usePayrollStore((state) => state.payments)
+  const addPayment = usePayrollStore((state) => state.addPayment)
   const [selectedPayment, setSelectedPayment] = useState<PayrollPaymentRecord | null>(null)
   const [isRecordOpen, setIsRecordOpen] = useState(false)
   const [recordState, setRecordState] = useState({
@@ -111,7 +113,7 @@ export default function PayrollPayments() {
       status,
     }
 
-    setPayments((prev) => [newPayment, ...prev])
+    addPayment(newPayment)
     setIsRecordOpen(false)
     toast.success(`Payment voucher recorded for ${newPayment.employee}`)
   }

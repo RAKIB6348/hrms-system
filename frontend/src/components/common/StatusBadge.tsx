@@ -13,6 +13,7 @@ export const statusColors: Record<string, string> = {
 
   // Warning
   Pending: '#B45309',
+  'Partially Paid': '#B45309',
   'On Leave': '#B45309',
   'Awaiting Approval': '#B45309',
   Probation: '#B45309',

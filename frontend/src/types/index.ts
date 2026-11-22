@@ -5,7 +5,7 @@ export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Half Day' | 'On 
 export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'
 export type JobStatus = 'Open' | 'Draft' | 'On Hold' | 'Closed'
 export type ApplicationStage = 'Applied' | 'Screening' | 'Interview' | 'Offer' | 'Hired' | 'Rejected'
-export type PayrollStatus = 'Draft' | 'Processing' | 'Completed' | 'Paid'
+export type PayrollStatus = 'Draft' | 'Processing' | 'Completed' | 'Paid' | 'Partially Paid' | 'Unpaid'
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical'
 
 export interface EducationRecord {
@@ -202,6 +202,16 @@ export interface Application {
   location: string
 }
 
+export interface PayslipPaymentItem {
+  id: string
+  paymentDate: string
+  amount: number
+  paymentMethod: 'Bank Transfer' | 'Cash' | 'Mobile Banking'
+  paymentReference: string
+  status: 'Paid' | 'Partially Paid'
+  note?: string
+}
+
 export interface PayrollRecord {
   id: ID
   employeeId: string
@@ -212,9 +222,12 @@ export interface PayrollRecord {
   allowances: number
   deductions: number
   netPay: number
+  paidAmount?: number
+  remainingBalance?: number
   status: PayrollStatus
   /** True for records created through the in-app demo payslip generator. */
   generated?: boolean
+  paymentHistory?: PayslipPaymentItem[]
 }
 
 export interface PayrollBatch {
