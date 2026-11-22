@@ -1,6 +1,0 @@
-import{j as s,p as e,B as t,L as a}from"./index-CUx53zFZ.js";/**
- * @license lucide-react v0.468.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const r=s("Compass",[["path",{d:"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z",key:"9ktpf1"}],["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}]]);function n(){return e.jsxs("div",{className:"flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center",children:[e.jsx("div",{className:"flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary",children:e.jsx(r,{className:"h-8 w-8"})}),e.jsxs("div",{className:"space-y-1",children:[e.jsx("h1",{className:"text-3xl font-bold tracking-tight",children:"404 — Page not found"}),e.jsx("p",{className:"text-sm text-muted-foreground",children:"The page you're looking for doesn't exist in this demo workspace."})]}),e.jsx(t,{asChild:!0,children:e.jsx(a,{to:"/dashboard",children:"Back to Dashboard"})})]})}export{n as default};

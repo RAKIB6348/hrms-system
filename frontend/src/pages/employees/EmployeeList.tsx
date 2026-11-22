@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Download, MoreHorizontal, Pencil, Plus, Trash2, UserRound } from 'lucide-react'
+import { Download, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DemoNotice } from '@/components/common/DemoNotice'
 import { DataTable, type Column, type TableFilter } from '@/components/common/DataTable'
@@ -10,7 +10,9 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { EmployeeForm } from '@/features/employees/EmployeeForm'
 import { employees, departments } from '@/mocks/data'
 import { formatCurrency, initials } from '@/lib/utils'
 import type { Employee } from '@/types'
@@ -24,6 +26,7 @@ export default function EmployeeList() {
   const navigate = useNavigate()
   const [rows, setRows] = useState(employees)
   const [deleting, setDeleting] = useState<Employee | null>(null)
+  const [editing, setEditing] = useState<Employee | null>(null)
 
   const columns: Column<Employee>[] = [
     {
@@ -68,17 +71,51 @@ export default function EmployeeList() {
         filters={filters}
         searchPlaceholder="Search employees by name, email or ID..."
         onRowClick={(emp) => navigate(`/employees/${emp.id}`)}
-        rowActions={(emp) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => navigate(`/employees/${emp.id}`)}><UserRound className="h-4 w-4" /> View profile</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => toast.info('Edit employee form is available on the Add Employee page (demo)')}><Pencil className="h-4 w-4" /> Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" onSelect={() => setDeleting(emp)}><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        rowActions={(emp) => {
+          const name = `${emp.firstName} ${emp.lastName}`
+          return (
+            <div className="flex items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+                    aria-label={`View ${name}`}
+                    onClick={() => navigate(`/employees/${emp.id}`)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View profile</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 text-violet-600 hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                    aria-label={`Edit ${name}`}
+                    onClick={() => setEditing(emp)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit employee</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                    aria-label={`Delete ${name}`}
+                    onClick={() => setDeleting(emp)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete employee</TooltipContent>
+              </Tooltip>
+            </div>
+          )
+        }}
       />
+
       <ConfirmDialog
         open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}
         title="Delete employee?"
@@ -86,6 +123,49 @@ export default function EmployeeList() {
         confirmLabel="Delete employee"
         onConfirm={() => { if (deleting) setRows((prev) => prev.filter((e) => e.id !== deleting.id)); toast.success('Employee removed from demo list') }}
       />
+
+      <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogDescription>
+              Update details for {editing?.firstName} {editing?.lastName}. Changes are stored locally in this demo.
+            </DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <EmployeeForm
+              submitLabel="Save Changes"
+              defaultValues={{
+                firstName: editing.firstName,
+                lastName: editing.lastName,
+                email: editing.email,
+                phone: editing.phone,
+                department: editing.department,
+                designation: editing.designation,
+                employmentType: editing.employmentType,
+                joinDate: editing.joinDate,
+                location: editing.location,
+                salary: String(editing.salary),
+                manager: editing.manager,
+                address: editing.address,
+              }}
+              onCancel={() => setEditing(null)}
+              onSubmit={(values) => {
+                setRows((prev) => prev.map((row) => row.id === editing.id ? {
+                  ...row,
+                  ...values,
+                  employmentType: values.employmentType as Employee['employmentType'],
+                  salary: Number(values.salary),
+                  manager: values.manager ?? '',
+                  address: values.address ?? '',
+                } : row))
+                toast.success(`${values.firstName} ${values.lastName} updated in the demo list`)
+                setEditing(null)
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
