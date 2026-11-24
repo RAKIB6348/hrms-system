@@ -14,11 +14,24 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { EmployeeForm, employeeFromFormValues } from '@/features/employees/EmployeeForm'
 import { useEmployeeStore } from '@/hooks/use-employee-store'
 import { departments } from '@/mocks/data'
-import { formatCurrency, initials } from '@/lib/utils'
+import { cn, formatCurrency, initials } from '@/lib/utils'
 import type { Employee } from '@/types'
+
+const statusIndicatorConfig: Record<string, { dot: string; text: string }> = {
+  Active: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+  Inactive: { dot: 'bg-slate-400', text: 'text-slate-600 dark:text-slate-400' },
+  'On Leave': { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
+  Terminated: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
+  Probation: { dot: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-400' },
+}
+
+function getStatusIndicator(status: string) {
+  return statusIndicatorConfig[status] ?? { dot: 'bg-slate-400', text: 'text-slate-600 dark:text-slate-400' }
+}
 
 const filters: TableFilter<Employee>[] = [
   { key: 'department', label: 'Departments', options: departments.map((d) => d.name), value: (r) => r.department },
@@ -48,7 +61,7 @@ export default function EmployeeList() {
 
   const visibleEmployees = useMemo(() => rows.filter((row) => {
     const matchesQuery = query.trim() === '' || JSON.stringify(row).toLowerCase().includes(query.trim().toLowerCase())
-    return filters.every((filter) => {
+    return matchesQuery && filters.every((filter) => {
       const selected = filterValues[filter.key]
       return !selected || selected === 'all' || filter.value(row) === selected
     })
@@ -151,35 +164,126 @@ export default function EmployeeList() {
           {visibleEmployees.length === 0 ? (
             <Card><EmptyState title="No employees found" description="Try adjusting your search or filters." /></Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {visibleEmployees.map((emp) => {
                 const name = `${emp.firstName} ${emp.lastName}`
+                const initialLetter = emp.firstName ? emp.firstName.charAt(0).toUpperCase() : 'E'
+                const statusStyle = getStatusIndicator(emp.status)
+
                 return (
-                  <Card key={emp.id} className="p-4 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <Avatar className="h-12 w-12 shrink-0">
-                          <AvatarFallback style={{ backgroundColor: emp.avatarColor, color: '#fff' }}>{initials(name)}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{name}</p>
-                          <p className="truncate font-mono text-xs text-muted-foreground">{emp.employeeId}</p>
+                  <div
+                    key={emp.id}
+                    onClick={() => navigate(`/employees/${emp.id}`)}
+                    className="group relative flex items-center p-3 gap-3 rounded-[10px] bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-xs hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 cursor-pointer overflow-hidden min-h-[125px] max-h-[145px]"
+                  >
+                    {/* Left: Square Avatar (approx 90 x 100px) */}
+                    <div
+                      className="relative flex h-[100px] w-[90px] shrink-0 items-center justify-center rounded-lg overflow-hidden select-none"
+                      style={{ backgroundColor: emp.avatarColor || '#6366F1' }}
+                    >
+                      {emp.photoUrl ? (
+                        <img src={emp.photoUrl} alt={name} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-3xl font-bold tracking-wider text-white">
+                          {initialLetter}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Right: Employee Information */}
+                    <div className="flex-1 min-w-0 h-[100px] flex flex-col justify-between py-0.5">
+                      {/* Top Row: Name, ID and Status Indicator */}
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div className="min-w-0 pr-1">
+                          <p className="truncate text-sm font-bold text-[#0F172A] dark:text-slate-100 leading-tight group-hover:text-primary transition-colors">
+                            {name}
+                          </p>
+                          <p className="font-mono text-[11px] text-[#64748B] dark:text-slate-400 leading-none mt-0.5">
+                            {emp.employeeId}
+                          </p>
+                        </div>
+                        {/* Status Indicator */}
+                        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                          <span className={cn('h-2 w-2 rounded-full shrink-0', statusStyle.dot)} />
+                          <span className={cn('text-[11px] font-medium leading-none', statusStyle.text)}>
+                            {emp.status}
+                          </span>
                         </div>
                       </div>
-                      <StatusBadge status={emp.status} />
+
+                      {/* Middle: Designation & Department */}
+                      <div className="min-w-0 leading-tight">
+                        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">
+                          {emp.designation}
+                        </p>
+                        <p className="truncate text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">
+                          {emp.department}
+                        </p>
+                      </div>
+
+                      {/* Bottom Row: Contact Info & Action Buttons */}
+                      <div className="flex items-end justify-between gap-2 mt-auto">
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="flex items-center gap-1.5 truncate text-[11px] text-[#64748B] dark:text-slate-400 leading-none">
+                            <Mail className="h-3 w-3 shrink-0 text-[#64748B] dark:text-slate-400" />
+                            <span className="truncate">{emp.email}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 truncate text-[11px] text-[#64748B] dark:text-slate-400 leading-none">
+                            <Phone className="h-3 w-3 shrink-0 text-[#64748B] dark:text-slate-400" />
+                            <span className="truncate">{emp.phone}</span>
+                          </p>
+                        </div>
+
+                        {/* Bottom-right Action Buttons */}
+                        <div
+                          className="flex items-center gap-1 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`View ${name}`}
+                                onClick={() => navigate(`/employees/${emp.id}`)}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 dark:hover:bg-blue-900/80"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>View profile</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`Edit ${name}`}
+                                onClick={() => setEditing(emp)}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-purple-50 text-purple-600 transition-colors hover:bg-purple-100 hover:text-purple-700 dark:bg-purple-950/60 dark:text-purple-400 dark:hover:bg-purple-900/80"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit employee</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`Delete ${name}`}
+                                onClick={() => setDeleting(emp)}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-rose-50 text-rose-600 transition-colors hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 dark:hover:bg-rose-900/80"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete employee</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
-                      <p className="truncate text-sm font-medium text-foreground">{emp.designation}</p>
-                      <p className="truncate">{emp.department}</p>
-                      <p className="flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5 shrink-0" />{emp.email}</p>
-                      <p className="flex items-center gap-1.5 truncate"><Phone className="h-3.5 w-3.5 shrink-0" />{emp.phone}</p>
-                    </div>
-                    <div className="mt-4 flex items-center justify-end gap-1.5 border-t pt-3">
-                      <ActionIconButton variant="view" icon={Eye} label={`View ${name}`} tooltip="View profile" onClick={() => navigate(`/employees/${emp.id}`)} />
-                      <ActionIconButton variant="edit" icon={Pencil} label={`Edit ${name}`} tooltip="Edit employee" onClick={() => setEditing(emp)} />
-                      <ActionIconButton variant="delete" icon={Trash2} label={`Delete ${name}`} tooltip="Delete employee" onClick={() => setDeleting(emp)} />
-                    </div>
-                  </Card>
+                  </div>
                 )
               })}
             </div>
