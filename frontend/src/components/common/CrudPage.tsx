@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect, type SearchableSelectOption } from '@/components/ui/searchable-select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn, randomId } from '@/lib/utils'
@@ -17,9 +18,10 @@ import { cn, randomId } from '@/lib/utils'
 export interface FormFieldDef {
   key: string
   label: string
-  type?: 'text' | 'number' | 'email' | 'date' | 'select' | 'textarea'
-  options?: string[]
+  type?: 'text' | 'number' | 'email' | 'date' | 'select' | 'searchable-select' | 'textarea'
+  options?: (string | SearchableSelectOption)[]
   placeholder?: string
+  searchPlaceholder?: string
   required?: boolean
   colSpan?: 1 | 2
   icon?: any
@@ -64,7 +66,17 @@ export function CrudPage<T extends { id: string }>({
   const openCreate = () => {
     onAdd?.()
     setEditing(null)
-    setValues(Object.fromEntries(fields.map((f) => [f.key, f.type === 'select' ? (f.options?.[0] ?? '') : ''])))
+    setValues(
+      Object.fromEntries(
+        fields.map((f) => {
+          if (f.type === 'select' && f.options?.[0]) {
+            const first = f.options[0]
+            return [f.key, typeof first === 'string' ? first : first.value]
+          }
+          return [f.key, '']
+        }),
+      ),
+    )
     setErrors({})
     setDialogOpen(true)
   }
@@ -194,13 +206,37 @@ export function CrudPage<T extends { id: string }>({
                           <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.options?.map((o) => (
-                            <SelectItem key={o} value={o}>
-                              {o}
-                            </SelectItem>
-                          ))}
+                          {field.options?.map((o) => {
+                            const val = typeof o === 'string' ? o : o.value
+                            const lbl = typeof o === 'string' ? o : o.label
+                            return (
+                              <SelectItem key={val} value={val}>
+                                {lbl}
+                              </SelectItem>
+                            )
+                          })}
                         </SelectContent>
                       </Select>
+                    </div>
+                  ) : field.type === 'searchable-select' ? (
+                    <div className="relative">
+                      {FieldIcon && (
+                        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3 text-slate-400 dark:text-slate-500">
+                          <FieldIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                      <SearchableSelect
+                        id={field.key}
+                        value={values[field.key] ?? ''}
+                        options={field.options ?? []}
+                        placeholder={field.placeholder ?? `Select ${field.label.toLowerCase()}`}
+                        searchPlaceholder={field.searchPlaceholder ?? `Search ${field.label.toLowerCase()}...`}
+                        className={FieldIcon ? 'pl-9' : undefined}
+                        onValueChange={(v) => {
+                          setValues((prev) => ({ ...prev, [field.key]: v }))
+                          if (errors[field.key]) setErrors((prev) => ({ ...prev, [field.key]: '' }))
+                        }}
+                      />
                     </div>
                   ) : field.type === 'textarea' ? (
                     <div className="relative">

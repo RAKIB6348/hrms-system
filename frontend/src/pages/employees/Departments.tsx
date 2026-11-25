@@ -7,13 +7,35 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import type { SearchableSelectOption } from '@/components/ui/searchable-select'
 import { departments, employees } from '@/mocks/data'
 import { formatCurrency, initials } from '@/lib/utils'
 import type { Department } from '@/types'
 
+const headOptions: SearchableSelectOption[] = Array.from(
+  new Map<string, SearchableSelectOption>([
+    ...departments.map((d): [string, SearchableSelectOption] => [
+      d.head,
+      { value: d.head, label: d.head },
+    ]),
+    ...employees.map((e): [string, SearchableSelectOption] => {
+      const name = `${e.firstName} ${e.lastName}`
+      return [name, { value: name, label: name, sublabel: `${e.employeeId} · ${e.designation}` }]
+    }),
+  ]).values(),
+)
+
 const fields: FormFieldDef[] = [
   { key: 'name', label: 'Department Name', required: true, placeholder: 'e.g. Research' },
-  { key: 'head', label: 'Department Head', required: true, placeholder: 'Full name' },
+  {
+    key: 'head',
+    label: 'Department Head',
+    type: 'searchable-select',
+    options: headOptions,
+    required: true,
+    placeholder: 'Select department head',
+    searchPlaceholder: 'Search employee name or role...',
+  },
   { key: 'employees', label: 'Employee Count', type: 'number', required: true },
   { key: 'budget', label: 'Annual Budget', type: 'number', required: true },
   { key: 'description', label: 'Description', type: 'textarea' },
