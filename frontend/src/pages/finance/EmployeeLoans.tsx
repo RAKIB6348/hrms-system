@@ -74,6 +74,17 @@ const INSTALLMENT_OPTIONS = [
   { value: 60, label: '60 Installments (5 Years)' },
 ]
 
+const LOAN_PAYMENT_METHODS = [
+  'Cash',
+  'Bank Transfer',
+  'bKash',
+  'Nagad',
+  'Cheque',
+  'Salary Deduction',
+] as const
+
+const METHODS_WITH_REFERENCE = new Set(['Bank Transfer', 'bKash', 'Nagad', 'Cheque'])
+
 export default function EmployeeLoans() {
   const loans = useFinanceStore((s) => s.loans)
   const addLoan = useFinanceStore((s) => s.addLoan)
@@ -86,6 +97,8 @@ export default function EmployeeLoans() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isPayInstallmentOpen, setIsPayInstallmentOpen] = useState(false)
   const [loanToPay, setLoanToPay] = useState<Loan | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [transactionReference, setTransactionReference] = useState('')
 
   // Form states
   const [employeeName, setEmployeeName] = useState(
@@ -183,22 +196,27 @@ export default function EmployeeLoans() {
   // Handle Pay Installment
   const handleOpenPayInstallment = (loan: Loan) => {
     setLoanToPay(loan)
+    setPaymentMethod('')
+    setTransactionReference('')
     setIsPayInstallmentOpen(true)
   }
 
   const handleConfirmInstallmentPayment = () => {
-    if (!loanToPay) return
+    if (!loanToPay || !paymentMethod) return
 
     const installmentNum = (loanToPay.paidInstallments || 0) + 1
     const emiAmount = Math.min(loanToPay.emi, loanToPay.outstanding)
+    const trimmedRef = METHODS_WITH_REFERENCE.has(paymentMethod)
+      ? transactionReference.trim() || undefined
+      : undefined
 
-    recordLoanInstallment(loanToPay.id, emiAmount)
+    recordLoanInstallment(loanToPay.id, emiAmount, trimmedRef, paymentMethod)
 
     setIsPayInstallmentOpen(false)
     toast.success(
       `Installment #${installmentNum} of ${formatCurrency(emiAmount)} recorded for ${loanToPay.employee}`,
       {
-        description: `Remaining balance: ${formatCurrency(Math.max(0, loanToPay.outstanding - emiAmount))}`,
+        description: `Method: ${paymentMethod} · Remaining balance: ${formatCurrency(Math.max(0, loanToPay.outstanding - emiAmount))}`,
       }
     )
   }
@@ -735,6 +753,50 @@ export default function EmployeeLoans() {
                 </div>
               </div>
 
+              {/* Payment Method (Required) */}
+              <div className="space-y-1.5">
+                <Label htmlFor="installment-payment-method" className="text-xs font-semibold">
+                  Payment Method <span className="text-rose-500">*</span>
+                </Label>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(val) => {
+                    setPaymentMethod(val)
+                    if (!METHODS_WITH_REFERENCE.has(val)) {
+                      setTransactionReference('')
+                    }
+                  }}
+                >
+                  <SelectTrigger id="installment-payment-method" className="h-10 text-sm bg-background">
+                    <SelectValue placeholder="Select Payment Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOAN_PAYMENT_METHODS.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Transaction Reference (Optional for Bank Transfer, bKash, Nagad, Cheque) */}
+              {METHODS_WITH_REFERENCE.has(paymentMethod) && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="installment-tx-ref" className="text-xs font-semibold">
+                    Transaction Reference{' '}
+                    <span className="text-muted-foreground text-[10px]">(Optional)</span>
+                  </Label>
+                  <Input
+                    id="installment-tx-ref"
+                    placeholder="e.g. TXN-123456 or Cheque #"
+                    value={transactionReference}
+                    onChange={(e) => setTransactionReference(e.target.value)}
+                    className="h-10 text-sm bg-background font-mono"
+                  />
+                </div>
+              )}
+
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
                 <span>
@@ -753,6 +815,7 @@ export default function EmployeeLoans() {
               </Button>
               <Button
                 size="sm"
+                disabled={!paymentMethod}
                 onClick={handleConfirmInstallmentPayment}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-1.5"
               >
@@ -864,6 +927,7 @@ export default function EmployeeLoans() {
                         <th className="pb-2">Due Date</th>
                         <th className="pb-2">Amount</th>
                         <th className="pb-2">Status</th>
+                        <th className="pb-2">Method</th>
                         <th className="pb-2 text-right">Reference</th>
                       </tr>
                     </thead>
@@ -897,6 +961,9 @@ export default function EmployeeLoans() {
                             >
                               {inst.status}
                             </Badge>
+                          </td>
+                          <td className="py-2 text-muted-foreground">
+                            {inst.paymentMethod || (inst.status === 'Paid' ? 'Salary Deduction' : '—')}
                           </td>
                           <td className="py-2 text-right font-mono text-[11px] text-muted-foreground">
                             {inst.paymentReference || 'Scheduled'}

@@ -29,6 +29,7 @@ export function generateInstallmentSchedule(
       amount: i === totalInstallments ? amount - baseAmount * (totalInstallments - 1) : baseAmount,
       status: isPaid ? 'Paid' : 'Pending',
       paidDate: isPaid ? dueDateStr : undefined,
+      paymentMethod: isPaid ? 'Salary Deduction' : undefined,
       paymentReference: isPaid ? `EMI-AUTO-${1000 + i}` : undefined,
     })
   }
@@ -58,7 +59,8 @@ interface FinanceStoreState {
   recordLoanInstallment: (
     loanId: string,
     installmentAmount?: number,
-    paymentReference?: string
+    paymentReference?: string,
+    paymentMethod?: string
   ) => void
   addAdvance: (advance: Advance) => void
   updateAdvanceStatus: (
@@ -85,7 +87,7 @@ export const useFinanceStore = create<FinanceStoreState>()(
           ),
         })),
 
-      recordLoanInstallment: (loanId, installmentAmount, paymentReference) =>
+      recordLoanInstallment: (loanId, installmentAmount, paymentReference, paymentMethod) =>
         set((state) => ({
           loans: state.loans.map((loan) => {
             if (loan.id !== loanId) return loan
@@ -103,6 +105,7 @@ export const useFinanceStore = create<FinanceStoreState>()(
                   ...inst,
                   status: 'Paid' as const,
                   paidDate: new Date().toISOString().slice(0, 10),
+                  paymentMethod: paymentMethod || 'Salary Deduction',
                   paymentReference: paymentReference || `EMI-PAY-${Date.now().toString().slice(-5)}`,
                 }
               }

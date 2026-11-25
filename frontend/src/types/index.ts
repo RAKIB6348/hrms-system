@@ -281,6 +281,7 @@ export interface LoanInstallment {
   amount: number
   status: 'Paid' | 'Pending' | 'Overdue'
   paidDate?: string
+  paymentMethod?: string
   paymentReference?: string
 }
 
