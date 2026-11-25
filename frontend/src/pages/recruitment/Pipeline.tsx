@@ -1,35 +1,35 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useState, type DragEvent } from 'react'
 import { toast } from 'sonner'
 import {
-  ArrowRight,
   ArrowLeft,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Eye,
-  Star,
+  ArrowRight,
   Briefcase,
-  MapPin,
   Calendar,
-  Clock3,
-  Users,
+  CalendarCheck2,
   CheckCircle2,
-  BriefcaseBusiness,
+  ChevronDown,
+  Clock3,
+  Eye,
+  Filter,
+  Layers,
+  LayoutGrid,
+  List,
   Mail,
+  MapPin,
+  MoreVertical,
+  Plus,
   RotateCcw,
+  Search,
+  Settings2,
   Sparkles,
-  ChevronRight,
+  Star,
   UserCheck,
+  Users,
   XCircle,
 } from 'lucide-react'
-import { PageHeader } from '@/components/common/PageHeader'
-import { DemoNotice } from '@/components/common/DemoNotice'
-import { StatCard } from '@/components/common/StatCard'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -54,73 +54,122 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { applications, jobOpenings } from '@/mocks/data'
-import { initials, formatDate } from '@/lib/utils'
+import { cn, formatDate, initials } from '@/lib/utils'
 import type { Application, ApplicationStage } from '@/types'
 
-const columns: ApplicationStage[] = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired']
+const DEFAULT_PIPELINE_STAGES: ApplicationStage[] = [
+  'Applied',
+  'Screening',
+  'Interview',
+  'Offer',
+  'Hired',
+]
 
-const stageStyles: Record<
+type GroupByOption = 'stage' | 'job' | 'location'
+type ViewMode = 'kanban' | 'list'
+type ColumnSort = 'default' | 'rating' | 'date'
+
+const stageAccent: Record<
   ApplicationStage,
-  {
-    dot: string
-    badge: string
-    border: string
-    hoverBorder: string
-    bgTint: string
-  }
+  { bar: string; dot: string; badge: string }
 > = {
   Applied: {
+    bar: 'bg-indigo-500',
     dot: 'bg-indigo-500',
     badge: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
-    border: 'border-t-indigo-500',
-    hoverBorder: 'hover:border-indigo-400',
-    bgTint: 'bg-indigo-50/40 dark:bg-indigo-950/20',
   },
   Screening: {
+    bar: 'bg-violet-500',
     dot: 'bg-violet-500',
     badge: 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800',
-    border: 'border-t-violet-500',
-    hoverBorder: 'hover:border-violet-400',
-    bgTint: 'bg-violet-50/40 dark:bg-violet-950/20',
   },
   Interview: {
+    bar: 'bg-amber-500',
     dot: 'bg-amber-500',
     badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-    border: 'border-t-amber-500',
-    hoverBorder: 'hover:border-amber-400',
-    bgTint: 'bg-amber-50/40 dark:bg-amber-950/20',
   },
   Offer: {
+    bar: 'bg-sky-500',
     dot: 'bg-sky-500',
     badge: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800',
-    border: 'border-t-sky-500',
-    hoverBorder: 'hover:border-sky-400',
-    bgTint: 'bg-sky-50/40 dark:bg-sky-950/20',
   },
   Hired: {
+    bar: 'bg-emerald-500',
     dot: 'bg-emerald-500',
     badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-    border: 'border-t-emerald-500',
-    hoverBorder: 'hover:border-emerald-400',
-    bgTint: 'bg-emerald-50/40 dark:bg-emerald-950/20',
   },
   Rejected: {
+    bar: 'bg-rose-500',
     dot: 'bg-rose-500',
     badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800',
-    border: 'border-t-rose-500',
-    hoverBorder: 'hover:border-rose-400',
-    bgTint: 'bg-rose-50/40 dark:bg-rose-950/20',
   },
+}
+
+function InteractiveStarRating({
+  rating,
+  onRate,
+  size = 'sm',
+}: {
+  rating: number
+  onRate: (value: number) => void
+  size?: 'sm' | 'md'
+}) {
+  const iconCls = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
+  return (
+    <div
+      className="inline-flex items-center gap-0.5"
+      onClick={(e) => e.stopPropagation()}
+      role="group"
+      aria-label={`Rating ${rating} of 5`}
+    >
+      {[1, 2, 3, 4, 5].map((star) => {
+        const filled = star <= rating
+        return (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onRate(star)}
+            title={`Rate ${star} / 5`}
+            className="rounded-xs p-0.5 transition-transform hover:scale-110 focus:outline-none"
+          >
+            <Star
+              className={cn(
+                iconCls,
+                filled
+                  ? 'fill-amber-400 text-amber-400'
+                  : 'text-slate-300 dark:text-slate-600 hover:text-amber-300',
+              )}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function Pipeline() {
   const [candidates, setCandidates] = useState<Application[]>(() =>
-    applications.filter((a) => a.stage !== 'Rejected')
+    applications.filter((a) => a.stage !== 'Rejected'),
   )
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedJob, setSelectedJob] = useState('all')
+  const [minRating, setMinRating] = useState('all')
+  const [groupBy, setGroupBy] = useState<GroupByOption>('stage')
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban')
   const [selectedCandidate, setSelectedCandidate] = useState<Application | null>(null)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  const [collapsedColumns, setCollapsedColumns] = useState<Record<string, boolean>>({})
+  const [columnSorts, setColumnSorts] = useState<Record<string, ColumnSort>>({})
 
   // Add Candidate modal state
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -134,49 +183,76 @@ export default function Pipeline() {
     rating: 4,
   })
 
-  // Unique job titles for filtering
-  const jobOptions = useMemo(() => {
-    return Array.from(new Set(jobOpenings.map((j) => j.title)))
-  }, [])
+  // Configured stages derived dynamically from DEFAULT_PIPELINE_STAGES + any active candidate stages
+  const configuredStages = useMemo<ApplicationStage[]>(() => {
+    const extra = candidates
+      .map((c) => c.stage)
+      .filter((st) => st !== 'Rejected' && !DEFAULT_PIPELINE_STAGES.includes(st))
+    return Array.from(new Set([...DEFAULT_PIPELINE_STAGES, ...extra]))
+  }, [candidates])
 
-  // Filtered candidate list
+  const jobOptions = useMemo(
+    () => Array.from(new Set(jobOpenings.map((j) => j.title))),
+    [],
+  )
+
   const filteredCandidates = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
     return candidates.filter((c) => {
       const matchesSearch =
-        searchQuery === '' ||
-        c.candidate.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.job.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.location.toLowerCase().includes(searchQuery.toLowerCase())
-
+        !q ||
+        c.candidate.toLowerCase().includes(q) ||
+        c.job.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.location.toLowerCase().includes(q)
       const matchesJob = selectedJob === 'all' || c.job === selectedJob
-
-      return matchesSearch && matchesJob
+      const matchesRating = minRating === 'all' || c.rating >= Number(minRating)
+      return matchesSearch && matchesJob && matchesRating
     })
-  }, [candidates, searchQuery, selectedJob])
+  }, [candidates, searchQuery, selectedJob, minRating])
 
-  // Move candidate relative stage
+  const boardColumns = useMemo(() => {
+    if (groupBy === 'stage') {
+      return configuredStages.map((stage) => ({
+        key: stage,
+        label: stage,
+        stage,
+      }))
+    }
+    if (groupBy === 'job') {
+      const jobs = Array.from(
+        new Set([...jobOptions, ...filteredCandidates.map((c) => c.job)]),
+      )
+      return jobs.map((job) => ({ key: job, label: job, stage: null as ApplicationStage | null }))
+    }
+    const locs = Array.from(new Set(filteredCandidates.map((c) => c.location))).sort()
+    return locs.map((loc) => ({ key: loc, label: loc, stage: null as ApplicationStage | null }))
+  }, [groupBy, configuredStages, jobOptions, filteredCandidates])
+
+  const updateRating = (app: Application, nextRating: number) => {
+    setCandidates((prev) =>
+      prev.map((r) => (r.id === app.id ? { ...r, rating: nextRating } : r)),
+    )
+    if (selectedCandidate?.id === app.id) {
+      setSelectedCandidate({ ...selectedCandidate, rating: nextRating })
+    }
+    toast.success(`Updated ${app.candidate}'s rating to ${nextRating}/5`)
+  }
+
   const move = (app: Application, direction: 1 | -1) => {
-    const currentIndex = columns.indexOf(app.stage)
-    const next = columns[currentIndex + direction]
+    const currentIndex = configuredStages.indexOf(app.stage)
+    const next = configuredStages[currentIndex + direction]
     if (!next) {
       toast.info(direction === 1 ? 'Already at final stage' : 'Already at initial stage')
       return
     }
-    setCandidates((prev) =>
-      prev.map((r) => (r.id === app.id ? { ...r, stage: next } : r))
-    )
-    if (selectedCandidate?.id === app.id) {
-      setSelectedCandidate({ ...selectedCandidate, stage: next })
-    }
-    toast.success(`${app.candidate} moved to ${next}`)
+    moveToStage(app, next)
   }
 
-  // Move candidate to specific stage
   const moveToStage = (app: Application, targetStage: ApplicationStage) => {
     if (app.stage === targetStage) return
     setCandidates((prev) =>
-      prev.map((r) => (r.id === app.id ? { ...r, stage: targetStage } : r))
+      prev.map((r) => (r.id === app.id ? { ...r, stage: targetStage } : r)),
     )
     if (selectedCandidate?.id === app.id) {
       setSelectedCandidate({ ...selectedCandidate, stage: targetStage })
@@ -184,7 +260,6 @@ export default function Pipeline() {
     toast.success(`${app.candidate} moved to ${targetStage}`)
   }
 
-  // Reject candidate
   const rejectCandidate = (app: Application) => {
     setCandidates((prev) => prev.filter((r) => r.id !== app.id))
     if (selectedCandidate?.id === app.id) {
@@ -193,12 +268,14 @@ export default function Pipeline() {
     toast.error(`${app.candidate} marked as Rejected and removed from active pipeline`)
   }
 
-  // Open Add Candidate Dialog with pre-selected stage
-  const openAddModal = (stage: ApplicationStage = 'Applied') => {
+  const openAddModal = (stage: ApplicationStage = configuredStages[0] ?? 'Applied') => {
     setNewCandidate({
       name: '',
       email: '',
-      job: selectedJob !== 'all' ? selectedJob : jobOpenings[0]?.title || 'Senior Frontend Engineer',
+      job:
+        selectedJob !== 'all'
+          ? selectedJob
+          : jobOpenings[0]?.title || 'Senior Frontend Engineer',
       stage,
       experience: '3 years',
       location: 'New York',
@@ -207,7 +284,6 @@ export default function Pipeline() {
     setIsAddOpen(true)
   }
 
-  // Handle Add Candidate submit
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCandidate.name.trim() || !newCandidate.email.trim()) {
@@ -232,306 +308,679 @@ export default function Pipeline() {
     toast.success(`${created.candidate} added to ${created.stage}`)
   }
 
-  // Metric counts
+  // Drag and Drop Handlers
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, appId: string) => {
+    setDraggedId(appId)
+    e.dataTransfer.setData('text/plain', appId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>, colKey: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverColumn !== colKey) setDragOverColumn(colKey)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>, colKey: string, targetStage: ApplicationStage | null) => {
+    e.preventDefault()
+    const id = e.dataTransfer.getData('text/plain') || draggedId
+    setDragOverColumn(null)
+    setDraggedId(null)
+    if (!id) return
+    const app = candidates.find((c) => c.id === id)
+    if (!app) return
+
+    if (groupBy === 'stage' && targetStage) {
+      moveToStage(app, targetStage)
+    } else if (groupBy === 'job' && app.job !== colKey) {
+      setCandidates((prev) => prev.map((r) => (r.id === app.id ? { ...r, job: colKey } : r)))
+      toast.success(`${app.candidate} reassigned to ${colKey}`)
+    } else if (groupBy === 'location' && app.location !== colKey) {
+      setCandidates((prev) => prev.map((r) => (r.id === app.id ? { ...r, location: colKey } : r)))
+      toast.success(`${app.candidate} moved to ${colKey}`)
+    }
+  }
+
+  // Compact KPI metrics
   const totalCandidates = candidates.length
   const screeningAndInterview = candidates.filter(
-    (c) => c.stage === 'Screening' || c.stage === 'Interview'
+    (c) => c.stage === 'Screening' || c.stage === 'Interview',
   ).length
   const offersExtended = candidates.filter((c) => c.stage === 'Offer').length
   const hiredCount = candidates.filter((c) => c.stage === 'Hired').length
+  const hasFilters = Boolean(searchQuery || selectedJob !== 'all' || minRating !== 'all')
 
   return (
-    <div className="w-full space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Recruitment Pipeline"
-        description="A visual kanban board of candidates across hiring stages."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/recruitment/applications">
-                <Users className="mr-1.5 h-4 w-4" />
-                Applications Table
-              </Link>
+    <div className="w-full space-y-3">
+      {/* 1. Odoo-inspired Compact Control Panel */}
+      <div className="rounded-lg border border-border/80 bg-card px-4 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left: New Candidate + Title */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              size="sm"
+              onClick={() => openAddModal(configuredStages[0] ?? 'Applied')}
+              className="h-8 rounded-md px-3 text-xs font-semibold shadow-2xs"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              New Candidate
             </Button>
-            <Button onClick={() => openAddModal('Applied')}>
-              <Plus className="mr-1.5 h-4 w-4" />
-              Add Candidate
-            </Button>
-          </div>
-        }
-      />
-
-      <DemoNotice compact />
-
-      {/* Top KPI Metrics Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Active Candidates"
-          value={totalCandidates}
-          icon={Users}
-          tone="primary"
-          trend={14}
-          description="across all open positions"
-        />
-        <StatCard
-          title="In Review & Interview"
-          value={screeningAndInterview}
-          icon={Clock3}
-          tone="violet"
-          description="Screening & technical evaluations"
-        />
-        <StatCard
-          title="Offers Extended"
-          value={offersExtended}
-          icon={BriefcaseBusiness}
-          tone="sky"
-          description="Pending candidate response"
-        />
-        <StatCard
-          title="Hired This Period"
-          value={hiredCount}
-          icon={CheckCircle2}
-          tone="emerald"
-          trend={8}
-          description="Successfully joined team"
-        />
-      </div>
-
-      {/* Search & Filter Toolbar */}
-      <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-              {/* Search input */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search candidates by name, job, or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 text-sm"
-                />
-              </div>
-
-              {/* Job filter dropdown */}
-              <div className="w-full sm:w-64">
-                <Select value={selectedJob} onValueChange={setSelectedJob}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="All Positions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Positions</SelectItem>
-                    {jobOptions.map((job) => (
-                      <SelectItem key={job} value={job}>
-                        {job}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Reset filter button */}
-              {(searchQuery || selectedJob !== 'all') && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery('')
-                    setSelectedJob('all')
-                  }}
-                  className="h-9 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-
-            {/* Total count badge */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>
-                Showing <strong className="font-semibold text-foreground">{filteredCandidates.length}</strong> of{' '}
-                <strong className="font-semibold text-foreground">{candidates.length}</strong> candidates
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-bold tracking-tight text-foreground">
+                Recruitment Pipeline
+              </h1>
+              <span className="text-xs text-muted-foreground">
+                ({filteredCandidates.length}/{candidates.length})
               </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Kanban Board Container - Full Width Flexible Columns */}
-      <div className="w-full overflow-x-auto pb-4 scrollbar-thin">
-        <div className="flex min-w-full gap-4">
-          {columns.map((stage) => {
-            const stageRows = filteredCandidates.filter((r) => r.stage === stage)
-            const style = stageStyles[stage]
+          {/* Right: Search, Filters, Group By, View Switcher */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <div className="relative w-full sm:w-56">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search candidates..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 rounded-md pl-8 text-xs"
+              />
+            </div>
 
-            return (
-              <div
-                key={stage}
-                className="flex-1 min-w-[280px] flex flex-col rounded-xl border bg-slate-50/50 dark:bg-slate-900/40 p-3 shadow-sm transition-colors"
-              >
-                {/* Stage Header */}
-                <div className="mb-3 flex items-center justify-between border-b pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
-                    <span className="text-sm font-semibold text-foreground">{stage}</span>
-                    <Badge variant="outline" className={`h-5 px-1.5 text-[11px] font-medium ${style.badge}`}>
-                      {stageRows.length}
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-background"
-                    onClick={() => openAddModal(stage)}
-                    title={`Add candidate to ${stage}`}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Candidate Cards Column Content */}
-                <div className="flex flex-1 flex-col space-y-3">
-                  {stageRows.length === 0 ? (
-                    <div className="flex flex-1 min-h-[160px] flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center text-xs text-muted-foreground bg-background/50">
-                      <Users className="mb-2 h-6 w-6 opacity-30" />
-                      <p className="font-medium">No candidates</p>
-                      <p className="mt-0.5 text-[11px] opacity-75">
-                        {searchQuery || selectedJob !== 'all'
-                          ? 'Try adjusting your filters'
-                          : `No applicants currently in ${stage}`}
-                      </p>
-                    </div>
-                  ) : (
-                    stageRows.map((app) => (
-                      <div
-                        key={app.id}
-                        onClick={() => setSelectedCandidate(app)}
-                        className={`group relative rounded-xl border bg-card p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${style.hoverBorder} cursor-pointer`}
-                      >
-                        {/* Top: Avatar, Name, Job, and Menu */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-2.5 min-w-0">
-                            <Avatar className="h-9 w-9 shrink-0 ring-1 ring-border">
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                                {initials(app.candidate)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                              <h4 className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                                {app.candidate}
-                              </h4>
-                              <p className="truncate text-xs text-muted-foreground">{app.job}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem onClick={() => setSelectedCandidate(app)}>
-                                  <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  View Profile
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => toast.info(`Email drafted for ${app.candidate} (demo)`)}
-                                >
-                                  <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  Send Email
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {columns.map((st) => (
-                                  <DropdownMenuItem
-                                    key={st}
-                                    disabled={app.stage === st}
-                                    onClick={() => moveToStage(app, st)}
-                                  >
-                                    Move to {st}
-                                  </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => rejectCandidate(app)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Reject Candidate
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-
-                        {/* Mid Meta: Experience, Location, Rating */}
-                        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-                          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            <Briefcase className="h-3 w-3" />
-                            {app.experience}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            {app.location}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                            <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                            {app.rating}.0
-                          </span>
-                        </div>
-
-                        {/* Footer Meta & Stage Advance Arrows */}
-                        <div className="mt-3 flex items-center justify-between border-t pt-2.5 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1 text-[11px]">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(app.appliedOn, { month: 'short', day: 'numeric' })}
-                          </span>
-
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            {columns.indexOf(stage) > 0 && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted"
-                                onClick={() => move(app, -1)}
-                                title="Move to previous stage"
-                              >
-                                <ArrowLeft className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                            {columns.indexOf(stage) < columns.length - 1 && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted"
-                                onClick={() => move(app, 1)}
-                                title="Move to next stage"
-                              >
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
+            {/* Filters Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'h-8 rounded-md px-2.5 text-xs gap-1.5',
+                    (selectedJob !== 'all' || minRating !== 'all') &&
+                      'border-primary/50 bg-primary/5 text-primary',
                   )}
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  Filters
+                  <ChevronDown className="h-3 w-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60 p-2 space-y-2">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-muted-foreground px-1">
+                    Job Position
+                  </span>
+                  <Select value={selectedJob} onValueChange={setSelectedJob}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="All Positions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Positions</SelectItem>
+                      {jobOptions.map((job) => (
+                        <SelectItem key={job} value={job}>
+                          {job}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            )
-          })}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-muted-foreground px-1">
+                    Minimum Rating
+                  </span>
+                  <Select value={minRating} onValueChange={setMinRating}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Any Rating" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any Rating</SelectItem>
+                      <SelectItem value="3">3+ Stars</SelectItem>
+                      <SelectItem value="4">4+ Stars</SelectItem>
+                      <SelectItem value="5">5 Stars</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Group By Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 rounded-md px-2.5 text-xs gap-1.5">
+                  <Layers className="h-3.5 w-3.5" />
+                  Group By:{' '}
+                  <span className="font-semibold capitalize">{groupBy}</span>
+                  <ChevronDown className="h-3 w-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => setGroupBy('stage')}>
+                  Stage {groupBy === 'stage' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setGroupBy('job')}>
+                  Job Position {groupBy === 'job' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setGroupBy('location')}>
+                  Location {groupBy === 'location' && '✓'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('')
+                  setSelectedJob('all')
+                  setMinRating('all')
+                }}
+                className="h-8 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="mr-1 h-3 w-3" />
+                Reset
+              </Button>
+            )}
+
+            {/* Kanban / List Switcher */}
+            <div className="inline-flex items-center rounded-md border bg-muted/40 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('kanban')}
+                title="Kanban view"
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-xs px-2 py-1 text-xs font-medium transition-colors',
+                  viewMode === 'kanban'
+                    ? 'bg-background text-foreground shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Kanban</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                title="List view"
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-xs px-2 py-1 text-xs font-medium transition-colors',
+                  viewMode === 'list'
+                    ? 'bg-background text-foreground shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <List className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">List</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* 2. Compact Recruitment KPI Summary Strip */}
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <div className="flex items-center justify-between rounded-md border border-border/80 bg-card px-3.5 py-2">
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">Active Candidates</p>
+            <p className="text-lg font-bold leading-tight text-foreground">{totalCandidates}</p>
+          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Users className="h-4 w-4" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-md border border-border/80 bg-card px-3.5 py-2">
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">Review & Interview</p>
+            <p className="text-lg font-bold leading-tight text-foreground">{screeningAndInterview}</p>
+          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <Clock3 className="h-4 w-4" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-md border border-border/80 bg-card px-3.5 py-2">
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">Offers Extended</p>
+            <p className="text-lg font-bold leading-tight text-foreground">{offersExtended}</p>
+          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
+            <UserCheck className="h-4 w-4" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-md border border-border/80 bg-card px-3.5 py-2">
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground">Hired</p>
+            <p className="text-lg font-bold leading-tight text-foreground">{hiredCount}</p>
+          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Kanban Board or List View */}
+      {viewMode === 'kanban' ? (
+        <div className="w-full overflow-x-auto pb-3 scrollbar-thin">
+          <div className="flex min-w-full items-start gap-3">
+            {boardColumns.map((col) => {
+              const rawRows = filteredCandidates.filter((c) => {
+                if (groupBy === 'stage') return c.stage === col.key
+                if (groupBy === 'job') return c.job === col.key
+                return c.location === col.key
+              })
+
+              const sortMode = columnSorts[col.key] ?? 'default'
+              const stageRows = [...rawRows].sort((a, b) => {
+                if (sortMode === 'rating') return b.rating - a.rating
+                if (sortMode === 'date') return b.appliedOn.localeCompare(a.appliedOn)
+                return 0
+              })
+
+              const isCollapsed = Boolean(collapsedColumns[col.key])
+              const isDropTarget = dragOverColumn === col.key
+              const pct =
+                filteredCandidates.length > 0
+                  ? Math.round((stageRows.length / filteredCandidates.length) * 100)
+                  : 0
+              const accent = col.stage
+                ? stageAccent[col.stage]
+                : { bar: 'bg-primary', dot: 'bg-primary', badge: '' }
+
+              if (isCollapsed) {
+                return (
+                  <div
+                    key={col.key}
+                    onDragOver={(e) => handleDragOver(e, col.key)}
+                    onDragLeave={() => setDragOverColumn(null)}
+                    onDrop={(e) => handleDrop(e, col.key, col.stage)}
+                    onClick={() =>
+                      setCollapsedColumns((prev) => ({ ...prev, [col.key]: false }))
+                    }
+                    title={`Expand ${col.label}`}
+                    className={cn(
+                      'flex w-11 shrink-0 cursor-pointer flex-col items-center gap-3 rounded-md border border-border/70 bg-muted/30 py-3 transition-colors hover:bg-muted/60',
+                      isDropTarget && 'ring-1 ring-primary bg-primary/5',
+                    )}
+                  >
+                    <span className={cn('h-2 w-2 rounded-full', accent.dot)} />
+                    <span className="text-xs font-semibold text-muted-foreground [writing-mode:vertical-rl] rotate-180">
+                      {col.label} ({stageRows.length})
+                    </span>
+                  </div>
+                )
+              }
+
+              return (
+                <div
+                  key={col.key}
+                  onDragOver={(e) => handleDragOver(e, col.key)}
+                  onDragLeave={() => setDragOverColumn(null)}
+                  onDrop={(e) => handleDrop(e, col.key, col.stage)}
+                  className={cn(
+                    'flex min-w-[270px] flex-1 flex-col rounded-md bg-muted/35 dark:bg-slate-900/40 p-2 transition-colors',
+                    isDropTarget && 'ring-1 ring-primary/60 bg-primary/5',
+                  )}
+                >
+                  {/* Column Header */}
+                  <div className="px-1 pb-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={cn('h-2 w-2 shrink-0 rounded-full', accent.dot)} />
+                        <h3 className="truncate text-xs font-bold uppercase tracking-wide text-foreground">
+                          {col.label}
+                        </h3>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          {stageRows.length}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 rounded-sm text-muted-foreground hover:text-foreground"
+                          onClick={() => openAddModal(col.stage ?? 'Applied')}
+                          title={`Add candidate to ${col.label}`}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 rounded-sm text-muted-foreground hover:text-foreground"
+                              title={`${col.label} settings`}
+                            >
+                              <Settings2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44 text-xs">
+                            <DropdownMenuItem
+                              onClick={() => openAddModal(col.stage ?? 'Applied')}
+                            >
+                              <Plus className="mr-2 h-3.5 w-3.5" />
+                              Add Candidate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setColumnSorts((prev) => ({ ...prev, [col.key]: 'rating' }))
+                              }
+                            >
+                              Sort by Rating {sortMode === 'rating' && '✓'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setColumnSorts((prev) => ({ ...prev, [col.key]: 'date' }))
+                              }
+                            >
+                              Sort by Date {sortMode === 'date' && '✓'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setColumnSorts((prev) => ({ ...prev, [col.key]: 'default' }))
+                              }
+                            >
+                              Default Order {sortMode === 'default' && '✓'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setCollapsedColumns((prev) => ({ ...prev, [col.key]: true }))
+                              }
+                            >
+                              Fold Column
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    {/* Stage Progress Bar */}
+                    <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-border/70">
+                      <div
+                        className={cn('h-full transition-all duration-300', accent.bar)}
+                        style={{ width: `${Math.max(pct, stageRows.length > 0 ? 12 : 0)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Candidate Cards */}
+                  <div className="flex flex-1 flex-col gap-2 min-h-[140px]">
+                    {stageRows.length === 0 ? (
+                      <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-dashed border-border/70 bg-background/40 p-4 text-center text-xs text-muted-foreground">
+                        <p className="font-medium">Empty stage</p>
+                        <p className="mt-0.5 text-[11px] opacity-75">
+                          Drag a candidate here or click +
+                        </p>
+                      </div>
+                    ) : (
+                      stageRows.map((app) => (
+                        <div
+                          key={app.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, app.id)}
+                          onDragEnd={() => {
+                            setDraggedId(null)
+                            setDragOverColumn(null)
+                          }}
+                          onClick={() => setSelectedCandidate(app)}
+                          className={cn(
+                            'group relative cursor-pointer rounded-md border border-border/80 bg-card p-3 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm',
+                            draggedId === app.id && 'opacity-50',
+                          )}
+                        >
+                          {/* Top Row: Avatar, Name, Position, Menu */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <Avatar className="h-7 w-7 shrink-0 border border-border/60">
+                                <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
+                                  {initials(app.candidate)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <h4 className="truncate text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors">
+                                  {app.candidate}
+                                </h4>
+                                <p className="truncate text-xs text-muted-foreground mt-0.5">
+                                  {app.job}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div
+                              className="shrink-0 -mr-1 -mt-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 rounded-sm text-muted-foreground hover:text-foreground"
+                                    aria-label={`Actions for ${app.candidate}`}
+                                  >
+                                    <MoreVertical className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                  <DropdownMenuItem onClick={() => setSelectedCandidate(app)}>
+                                    <Eye className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                    View Profile
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      toast.info(`Email drafted for ${app.candidate} (demo)`)
+                                    }
+                                  >
+                                    <Mail className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                    Send Email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {configuredStages.map((st) => (
+                                    <DropdownMenuItem
+                                      key={st}
+                                      disabled={app.stage === st}
+                                      onClick={() => moveToStage(app, st)}
+                                    >
+                                      Move to {st}
+                                    </DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => rejectCandidate(app)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <XCircle className="mr-2 h-3.5 w-3.5" />
+                                    Reject Candidate
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+
+                          {/* Compact Meta Row */}
+                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <Briefcase className="h-3 w-3" />
+                              {app.experience}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {app.location}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(app.appliedOn, { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+
+                          {/* Footer: Interactive Stars + Real Stage/Interview Indicator */}
+                          <div className="mt-2.5 flex items-center justify-between border-t border-border/60 pt-2">
+                            <InteractiveStarRating
+                              rating={app.rating}
+                              onRate={(val) => updateRating(app, val)}
+                            />
+
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                              {app.stage === 'Interview' && (
+                                <span
+                                  className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400"
+                                  title="In Interview stage"
+                                >
+                                  <CalendarCheck2 className="h-3.5 w-3.5" />
+                                  Interview
+                                </span>
+                              )}
+                              {app.stage === 'Offer' && (
+                                <span
+                                  className="inline-flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400"
+                                  title="Offer stage"
+                                >
+                                  <Clock3 className="h-3.5 w-3.5" />
+                                  Offer
+                                </span>
+                              )}
+                              {app.stage === 'Hired' && (
+                                <span
+                                  className="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400"
+                                  title="Hired"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  Hired
+                                </span>
+                              )}
+                              {groupBy !== 'stage' && (
+                                <span className="text-[11px] font-medium text-muted-foreground">
+                                  {app.stage}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        /* List View */
+        <div className="overflow-x-auto rounded-md border border-border/80 bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead>Candidate</TableHead>
+                <TableHead>Applied Position</TableHead>
+                <TableHead>Stage</TableHead>
+                <TableHead>Experience</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead>Applied On</TableHead>
+                <TableHead className="w-24 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCandidates.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-xs text-muted-foreground">
+                    No candidates match the current filters.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredCandidates.map((app) => (
+                  <TableRow
+                    key={app.id}
+                    onClick={() => setSelectedCandidate(app)}
+                    className="cursor-pointer hover:bg-muted/30"
+                  >
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-7 w-7 border border-border/60">
+                          <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
+                            {initials(app.candidate)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{app.candidate}</p>
+                          <p className="text-[11px] text-muted-foreground">{app.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-foreground">
+                      {app.job}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge
+                        variant="outline"
+                        className={cn('text-[11px] font-medium', stageAccent[app.stage]?.badge)}
+                      >
+                        {app.stage}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {app.experience}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {app.location}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <InteractiveStarRating
+                        rating={app.rating}
+                        onRate={(val) => updateRating(app, val)}
+                      />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {formatDate(app.appliedOn, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </TableCell>
+                    <TableCell
+                      className="whitespace-nowrap text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="inline-flex items-center gap-1">
+                        {configuredStages.indexOf(app.stage) > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => move(app, -1)}
+                            title="Move to previous stage"
+                          >
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {configuredStages.indexOf(app.stage) < configuredStages.length - 1 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => move(app, 1)}
+                            title="Move to next stage"
+                          >
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
       {/* Candidate Details Modal */}
       {selectedCandidate && (
-        <Dialog open={!!selectedCandidate} onOpenChange={(open) => !open && setSelectedCandidate(null)}>
+        <Dialog
+          open={!!selectedCandidate}
+          onOpenChange={(open) => !open && setSelectedCandidate(null)}
+        >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <div className="flex items-start justify-between pr-6">
@@ -552,7 +1001,7 @@ export default function Pipeline() {
                 </div>
                 <Badge
                   variant="outline"
-                  className={`text-xs px-2.5 py-1 ${stageStyles[selectedCandidate.stage]?.badge}`}
+                  className={cn('text-xs px-2.5 py-1', stageAccent[selectedCandidate.stage]?.badge)}
                 >
                   {selectedCandidate.stage}
                 </Badge>
@@ -560,13 +1009,13 @@ export default function Pipeline() {
             </DialogHeader>
 
             {/* Pipeline Stage Progression Stepper */}
-            <div className="my-2 rounded-xl border bg-slate-50 dark:bg-slate-900/60 p-4">
+            <div className="my-2 rounded-lg border bg-muted/30 p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                 Pipeline Progression
               </p>
               <div className="grid grid-cols-5 gap-2">
-                {columns.map((step, idx) => {
-                  const currentIdx = columns.indexOf(selectedCandidate.stage)
+                {configuredStages.map((step, idx) => {
+                  const currentIdx = configuredStages.indexOf(selectedCandidate.stage)
                   const isCurrent = selectedCandidate.stage === step
                   const isPast = currentIdx > idx
 
@@ -575,13 +1024,14 @@ export default function Pipeline() {
                       key={step}
                       type="button"
                       onClick={() => moveToStage(selectedCandidate, step)}
-                      className={`flex flex-col items-center justify-center rounded-lg p-2 text-center transition-all ${
+                      className={cn(
+                        'flex flex-col items-center justify-center rounded-md p-2 text-center transition-all',
                         isCurrent
                           ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary ring-offset-2'
                           : isPast
                           ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20'
-                          : 'bg-muted/70 text-muted-foreground hover:bg-muted'
-                      }`}
+                          : 'bg-muted/70 text-muted-foreground hover:bg-muted',
+                      )}
                     >
                       <span className="text-[10px] font-medium opacity-75">Step {idx + 1}</span>
                       <span className="text-xs font-semibold">{step}</span>
@@ -592,16 +1042,16 @@ export default function Pipeline() {
             </div>
 
             {/* Detailed Info Grid */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1 rounded-lg border p-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="space-y-1 rounded-md border p-3">
                 <span className="text-xs font-medium text-muted-foreground">Experience</span>
                 <p className="font-semibold">{selectedCandidate.experience}</p>
               </div>
-              <div className="space-y-1 rounded-lg border p-3">
+              <div className="space-y-1 rounded-md border p-3">
                 <span className="text-xs font-medium text-muted-foreground">Location</span>
                 <p className="font-semibold">{selectedCandidate.location}</p>
               </div>
-              <div className="space-y-1 rounded-lg border p-3">
+              <div className="space-y-1 rounded-md border p-3">
                 <span className="text-xs font-medium text-muted-foreground">Applied Date</span>
                 <p className="font-semibold">
                   {formatDate(selectedCandidate.appliedOn, {
@@ -611,23 +1061,26 @@ export default function Pipeline() {
                   })}
                 </p>
               </div>
-              <div className="space-y-1 rounded-lg border p-3">
+              <div className="space-y-1 rounded-md border p-3">
                 <span className="text-xs font-medium text-muted-foreground">Candidate Rating</span>
-                <div className="flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400">
-                  <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                  {selectedCandidate.rating}.0 / 5.0
+                <div>
+                  <InteractiveStarRating
+                    rating={selectedCandidate.rating}
+                    onRate={(val) => updateRating(selectedCandidate, val)}
+                    size="md"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Recruiter Evaluation Summary */}
-            <div className="rounded-lg border p-3 space-y-1.5 bg-muted/20">
+            <div className="rounded-md border p-3 space-y-1.5 bg-muted/20">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Recruitment Notes & Assessment
+                Candidate Stage Summary
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Demonstrated strong domain competence in previous evaluations. Good communication, positive team cultural alignment, and matched expected compensation bands.
+                Currently in <strong className="text-foreground">{selectedCandidate.stage}</strong>{' '}
+                for <strong className="text-foreground">{selectedCandidate.job}</strong>.
               </p>
             </div>
 
@@ -646,7 +1099,8 @@ export default function Pipeline() {
                 <Button variant="outline" size="sm" onClick={() => setSelectedCandidate(null)}>
                   Close
                 </Button>
-                {columns.indexOf(selectedCandidate.stage) < columns.length - 1 && (
+                {configuredStages.indexOf(selectedCandidate.stage) <
+                  configuredStages.length - 1 && (
                   <Button
                     size="sm"
                     onClick={() => move(selectedCandidate, 1)}
@@ -728,7 +1182,7 @@ export default function Pipeline() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {columns.map((st) => (
+                    {configuredStages.map((st) => (
                       <SelectItem key={st} value={st}>
                         {st}
                       </SelectItem>
