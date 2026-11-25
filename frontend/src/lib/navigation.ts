@@ -100,6 +100,7 @@ export const navigation: NavItem[] = [
       { title: 'Finance Dashboard', href: '/finance' },
       { title: 'Employee Loans', href: '/finance/loans' },
       { title: 'Salary Advances', href: '/finance/advances' },
+      { title: 'Payment History', href: '/finance/payment-history' },
     ],
   },
   {
@@ -157,6 +158,7 @@ export const routeTitles: Record<string, string> = {
   '/finance': 'Finance Dashboard',
   '/finance/loans': 'Employee Loans',
   '/finance/advances': 'Salary Advances',
+  '/finance/payment-history': 'Payment History',
   '/reports': 'HR Analytics',
   '/reports/attendance': 'Attendance Reports',
   '/reports/payroll': 'Payroll Reports',

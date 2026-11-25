@@ -68,6 +68,7 @@ const GoalsKpis = lazy(() => import('@/pages/performance/GoalsKpis'))
 /* Finance */
 const EmployeeLoans = lazy(() => import('@/pages/finance/EmployeeLoans'))
 const SalaryAdvances = lazy(() => import('@/pages/finance/SalaryAdvances'))
+const PaymentHistory = lazy(() => import('@/pages/finance/PaymentHistory'))
 
 /* Reports */
 const HrAnalytics = lazy(() => import('@/pages/reports/HrAnalytics'))
@@ -146,6 +147,7 @@ export const router = createBrowserRouter([
       { path: 'finance', element: <FinanceDashboard /> },
       { path: 'finance/loans', element: <EmployeeLoans /> },
       { path: 'finance/advances', element: <SalaryAdvances /> },
+      { path: 'finance/payment-history', element: <PaymentHistory /> },
 
       { path: 'reports', element: <HrAnalytics /> },
       { path: 'reports/attendance', element: <AttendanceReports /> },
